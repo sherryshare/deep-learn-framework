@@ -1,0 +1,91 @@
+#ifndef FFDL_PKGS_PKGS_H_
+#define FFDL_PKGS_PKGS_H_
+
+#include <network.h>
+#include "common/common.h"
+
+enum MsgType{
+    msg_heart_beat = 74,
+    msg_req_nodes,
+    msg_ack_nodes,
+    msg_file_send,
+    msg_cmd_send,
+};
+
+class HeartBeatMsg : public ffnet::Package
+{
+public:
+    HeartBeatMsg()
+        : Package(msg_heart_beat)
+        , m_strIP("")
+        , m_iTCPPort(0)
+    {}
+
+    string_t    & ip_addr(){ return m_strIP;}
+    const string_t & ip_addr() const{return m_strIP;}
+
+    uint16_t      tcp_port() const {return m_iTCPPort;}
+    uint16_t &     tcp_port(){return m_iTCPPort;}
+    virtual void                    archive(ffnet::Archive &ar)
+    {
+        ar.archive(m_strIP);
+        ar.archive(m_iTCPPort);
+    }
+
+protected:
+    string_t    m_strIP;
+    uint16_t    m_iTCPPort;
+};
+
+class ReqNodeMsg : public ffnet::Package
+{
+public:
+    ReqNodeMsg()
+        :Package(msg_req_nodes)
+       {}
+    virtual void archive(ffnet::Archive & ar){}
+protected:
+};
+
+class AckNodeMsg: public ffnet::Package
+{
+public:
+    AckNodeMsg()
+        : Package(msg_ack_nodes)
+    {}
+
+    virtual void        archive(ffnet::Archive & ar)
+    {
+        if(ar.is_serializer() || ar.is_lengther())
+        {
+            size_t len = m_oPoints.size();
+            ar.archive(len);
+            for(size_t i = 0; i < len; ++i)
+            {
+                ar.archive(m_oPoints[i]->ip_addr);
+                ar.archive(m_oPoints[i]->tcp_port);
+            }
+        }
+        if(ar.is_deserializer())
+        {
+            size_t len;
+            ar.archive(len);
+            for(size_t i = 0; i < len; ++i)
+            {
+                std::string s;
+                uint16_t p;
+                ar.archive(s);
+                ar.archive(p);
+                m_oPoints.push_back(slave_point_spt(new slave_point_t(s, p)));
+            }
+        }
+    }
+
+    std::vector<slave_point_spt>    &       all_slave_points(){return m_oPoints;}
+    const std::vector<slave_point_spt>    &       all_slave_points() const {return m_oPoints;}
+
+protected:
+    std::vector<slave_point_spt> m_oPoints;
+};
+
+#endif
