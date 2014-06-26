@@ -10,9 +10,9 @@ public:
         : m_oNNFF(nnff){}
     typedef std::map<std::string, slave_point_spt>    slave_points_t;
 
-    void onLostTCPConnection(ffnet::TCPConnectionBase * pConn)
+    void onLostTCPConnection(ffnet::EndpointPtr_t pEP)
     {
-        auto p = pConn->getRemoteEndpointPtr();
+        auto p = pEP;
         std::string key = endpoint_to_string(p);
         auto it = m_oSlavePoints.find(key);
         if(it != m_oSlavePoints.end())

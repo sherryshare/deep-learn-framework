@@ -4,6 +4,7 @@ project(ffdl)
 #add_definitions(-DPROTO_BUF_SUPPORT)
 add_definitions(-g)
 add_definitions(-std=c++11)
+add_definitions(-DENABLE_LOG_CONSOLE)
 
 
 set(FFNET_ROOT_DIR ${PROJECT_SOURCE_DIR}/../ffnet/network)

@@ -43,9 +43,9 @@ public:
         }
     }
 
-    void    onLostTCPConnection(ffnet::TCPConnectionBase *pConn)
+    void    onLostTCPConnection(ffnet::EndpointPtr_t pEP)
     {
-        auto it = pConn->getRemoteEndpointPtr();
+        auto it = pEP;
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
         uint16_t port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
 
