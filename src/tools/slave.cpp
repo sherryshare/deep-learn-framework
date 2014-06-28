@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/shared_ptr.hpp>
 
 
 //! This is global thing!
@@ -21,6 +22,7 @@ public:
         {
             boost::shared_ptr<HeartBeatMsg> msg (new HeartBeatMsg()); //std::make_shared<HeartBeatMsg>();
             msg->ip_addr() = local_ip_v4();
+            std::cout<<"local ip :"<<msg->ip_addr()<<std::endl;
             msg->tcp_port() = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
             m_oNNFF.send(msg, m_p_svr);
         }

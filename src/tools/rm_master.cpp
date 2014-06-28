@@ -30,7 +30,8 @@ public:
         {
             slave_point_spt p(new slave_point_t(pPing->ip_addr(), pPing->tcp_port()));
             m_oSlavePoints.insert(std::make_pair(key, p));
-            std::cout<<"new slave point : "<< pEP->address().to_string()<<":"<<pEP->port()<<std::endl;
+            std::cout<<"new slave point from: "<< pEP->address().to_string()<<":"<<pEP->port()<<std::endl;
+            std::cout<<"\t-- the slave point is : "<<p->ip_addr<<":"<<p->tcp_port<<std::endl;
         }
     }
 
