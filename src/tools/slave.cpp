@@ -21,8 +21,7 @@ public:
         if(m_b_svr_connected)
         {
             boost::shared_ptr<HeartBeatMsg> msg (new HeartBeatMsg()); //std::make_shared<HeartBeatMsg>();
-            msg->ip_addr() = local_ip_v4();
-            std::cout<<"local ip :"<<msg->ip_addr()<<std::endl;
+            msg->ip_addr() = m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip");
             msg->tcp_port() = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
             m_oNNFF.send(msg, m_p_svr);
         }
