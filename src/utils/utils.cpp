@@ -25,7 +25,7 @@ std::string local_ip_v4()
          boost::asio::ip::address addr=(it++)->endpoint().address();
          if(addr.is_v6())
          {
-               //std::cout<<"ipv6 address: ";
+//                std::cout<<"ipv6 address: ";
          }
          else
             return addr.to_string();
