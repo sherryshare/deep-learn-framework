@@ -1,4 +1,5 @@
 #include "file_send.h"
+#include <tuple>
 
 using namespace std;
 
@@ -24,6 +25,12 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
+inline string getFileNameFromPath(string path)
+{
+  int start = path.find_last_of('/') + 1;
+  return path.substr(start,path.length() - start);
+}
+
 bool file_send(string input_file, string ip, string pwd, string output_file)
 {
   CURL *curl;
@@ -36,6 +43,10 @@ bool file_send(string input_file, string ip, string pwd, string output_file)
     std::cout << "Couldn't open '" << input_file << "'" << std::endl;
     return false;
   }
+  
+  if(output_file == "")
+    output_file = getFileNameFromPath(input_file);
+  
   if(pwd.find_last_of("/") != pwd.size() - 1){
     pwd += "/";
 //     std::cout << "pwd = " << pwd << std::endl;
