@@ -2,6 +2,7 @@
 #include <map>
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
+#include "pkgs/file_send.h"
 
 class DLMaster{
 
@@ -31,6 +32,14 @@ public:
         {
             std::cout<<"slave : "<<points[i]->ip_addr <<" : "<<points[i]->tcp_port<<std::endl;
         }
+        
+        for(size_t i = 0; i < points.size(); ++i){
+	  if(points[i]->ip_addr != m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip"))
+	  {
+	    std::cout << "File send to " << points[i]->ip_addr << std::endl;
+	    file_send("../confs/slave_net_conf.ini",points[i]->ip_addr,"/home/sherry");
+	  }
+	}
     }
 
 protected:
