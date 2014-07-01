@@ -8,6 +8,8 @@ enum MsgType{
     msg_heart_beat = 74,
     msg_req_nodes,
     msg_ack_nodes,
+    msg_send_file_dir_req,
+    msg_send_file_dir_ack,
     msg_file_send,
     msg_cmd_send,
 };
@@ -88,4 +90,29 @@ protected:
     std::vector<slave_point_spt> m_oPoints;
 };
 
+class FileSendDirReq: public ffnet::Package
+{
+public:
+    FileSendDirReq()
+    : Package(msg_send_file_dir_req){}
+    virtual void archive(ffnet::Archive & ar){}
+};//end class FileSendDirReq
+
+class FileSendDirAck : public ffnet::Package
+{
+public:
+    FileSendDirAck()
+    : Package(msg_send_file_dir_ack){}
+    
+    std::string &  dir(){return m_strDir;}
+    const std::string & dir() const {return m_strDir;}
+    
+    virtual void archive(ffnet::Archive & ar)
+    {
+        ar.archive(m_strDir);
+    }
+    
+protected:
+    std::string m_strDir;
+};//end class FileSendDirAck
 #endif

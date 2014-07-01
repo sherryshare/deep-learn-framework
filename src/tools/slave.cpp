@@ -56,6 +56,15 @@ public:
             m_b_svr_connected = false;
         }
     }
+    
+    void onRecvSendFileDirReq(boost::shared_ptr<FileSendDirReq> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        boost::shared_ptr<FileSendDirAck> pReply(new FileSendDirAck());
+        //TODO(sherryshare) specify the dire path here!
+        pReply->dir() = "/specify/path/onRecvSendFileDirReq/please";
+        
+        m_oNNFF.send(pReply, pEP);
+    }
 
 protected:
     ffnet::NetNervureFromFile  & m_oNNFF;
@@ -70,6 +79,7 @@ int main(int argc, char *argv[])
     ffnet::NetNervureFromFile nnff("../confs/slave_net_conf.ini");
     Slave s(nnff);
 
+    nnff.addNeedToRecvPkg<FileSendDirReq>(boost::bind(&Slave::onRecvSendFileDirReq, &s, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&Slave::onConnSucc, &s, _1));
     ffnet::event::Event<ffnet::event::tcp_lost_connection>::listen(&nnff, boost::bind(&Slave::onLostTCPConnection, &s, _1));
 
