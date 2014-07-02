@@ -79,6 +79,11 @@ public:
 	std::cout << "DIR = " << pReply->dir() << std::endl;
         m_oNNFF.send(pReply, pEP);
     }
+    
+    void onRecvCmdStartReq(boost::shared_ptr<CmdStartReq> pMsg, EndpointPtr_t pEP)
+    {
+        //TODO(sherryshare)Start the program here!
+    }
 
 protected:
     ffnet::NetNervureFromFile  & m_oNNFF;
@@ -103,6 +108,7 @@ int main(int argc, char *argv[])
     Slave s(nnff);
 
     nnff.addNeedToRecvPkg<FileSendDirReq>(boost::bind(&Slave::onRecvSendFileDirReq, &s, _1, _2));
+    nnff.addNeedToRecvPkg<CmdStartReq>(boost::bind(&Slave::onRecvCmdStartReq, &s, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&Slave::onConnSucc, &s, _1));
     ffnet::event::Event<ffnet::event::tcp_lost_connection>::listen(&nnff, boost::bind(&Slave::onLostTCPConnection, &s, _1));
 

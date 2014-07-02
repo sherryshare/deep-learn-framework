@@ -11,7 +11,7 @@ enum MsgType{
     msg_send_file_dir_req,
     msg_send_file_dir_ack,
     msg_file_send,
-    msg_cmd_send,
+    msg_cmd_start_req,
 };
 
 class HeartBeatMsg : public ffnet::Package
@@ -115,4 +115,21 @@ public:
 protected:
     std::string m_strDir;
 };//end class FileSendDirAck
+
+class CmdStartReq: public ffnet::Package
+{
+public:
+    CmdStartReq()
+    : Package(msg_cmd_start_req){}
+    
+    std::string & cmd(){return m_strCmd;}
+    const std::string & cmd() const {return m_strCmd;}
+    
+    virtual void archive(ffnet::Archive & ar)
+    {
+        ar.archive(m_strCmd);
+    }
+protected:
+    std::string m_strCmd;
+};
 #endif

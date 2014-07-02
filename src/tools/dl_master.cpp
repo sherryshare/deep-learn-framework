@@ -60,11 +60,11 @@ public:
         std::string & slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         //Send file here!
-	if(pEP->address().to_string() != m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip"))
-	{
-	  file_send("../confs/slave_net_conf.ini",pEP->address().to_string(),slave_path);
-	  std::cout<<"path on slave "<<slave_path<<std::endl;
-        }        
+        file_send("../confs/slave_net_conf.ini",pEP->address().to_string(),slave_path);
+        std::cout<<"path on slave "<<slave_path<<std::endl;
+        //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
+        
+        //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
     }
 
 protected:
@@ -76,6 +76,7 @@ protected:
 int main(int argc, char *argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
+    //TODO(sherryshare) pass user defined library (UDL) as an argument!
 
     ffnet::NetNervureFromFile nnff("../confs/dl_master_net_conf.ini");
     DLMaster master(nnff);
@@ -85,6 +86,5 @@ int main(int argc, char *argv[])
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     nnff.run();
-    return 0;
     return 0;
 }
