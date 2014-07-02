@@ -53,14 +53,6 @@ public:
             m_oSlaves.push_back(sp);
             m_oNNFF.addTCPClient(sp);
         }
-        /*
-        for(size_t i = 0; i < points.size(); ++i){
-            if(points[i]->ip_addr != m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip"))
-            {
-                std::cout << "File send to " << points[i]->ip_addr << std::endl;
-                file_send("../confs/slave_net_conf.ini",points[i]->ip_addr,"/home/sherry");
-            }
-        }*/
     }
     
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
@@ -68,8 +60,11 @@ public:
         std::string & slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         //Send file here!
-        //TODO(sherryshare)
-        std::cout<<"path on slave "<<slave_path<<std::endl;
+	if(pEP->address().to_string() != m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip"))
+	{
+	  file_send("../confs/slave_net_conf.ini",pEP->address().to_string(),slave_path);
+	  std::cout<<"path on slave "<<slave_path<<std::endl;
+        }        
     }
 
 protected:

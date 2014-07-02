@@ -68,9 +68,15 @@ public:
     void onRecvSendFileDirReq(boost::shared_ptr<FileSendDirReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         boost::shared_ptr<FileSendDirAck> pReply(new FileSendDirAck());
-        //TODO(sherryshare) specify the dire path here!
-        pReply->dir() = "/specify/path/onRecvSendFileDirReq/please";
-        
+        //Specify the dire path here
+        pReply->dir() = "/home/sherry";
+	if((pReply->dir() = getcwd(NULL,0)) == "")
+	  std::cout << "Error when getcwd!" << std::endl;
+	pReply->dir() += "/globalFiles";
+	if(access(pReply->dir().c_str(),F_OK) == -1){
+	  mkdir(pReply->dir().c_str(),S_IRWXU);
+	}
+	std::cout << "DIR = " << pReply->dir() << std::endl;
         m_oNNFF.send(pReply, pEP);
     }
 
