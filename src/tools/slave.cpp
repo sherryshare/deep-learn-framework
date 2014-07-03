@@ -80,7 +80,7 @@ public:
         m_oNNFF.send(pReply, pEP);
     }
     
-    void onRecvCmdStartReq(boost::shared_ptr<CmdStartReq> pMsg, EndpointPtr_t pEP)
+    void onRecvCmdStartReq(boost::shared_ptr<CmdStartReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         //TODO(sherryshare)Start the program here!
     }

@@ -1,14 +1,19 @@
 #include <network.h>
 #include <map>
+#include <sstream>
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
 #include "pkgs/file_send.h"
+#include <dlfcn.h>//dymanic library
+#include <dirent.h>
+
+#define GLOBALFILENAME "/globalFiles"
 
 class DLMaster{
 
 public:
-    DLMaster(ffnet::NetNervureFromFile & nnff)
-        : m_oNNFF(nnff){}
+    DLMaster(ffnet::NetNervureFromFile & nnff, std::string UDLStr)
+        : m_oNNFF(nnff), UDL(UDLStr){}
 
     void    onConnSucc(ffnet::TCPConnectionBase *pConn)
     {
@@ -37,6 +42,40 @@ public:
         }
     }
 
+    bool divideInputData(std::string input_file,std::string output_dir)
+    {
+        // open the library
+        std::cout << "Opening " << UDL << "..." << std::endl;
+        void * handle = dlopen(UDL.c_str(), RTLD_LAZY);
+
+        if (!handle) {
+            std::cerr << "Cannot open library: " << dlerror() << std::endl;
+            return false;
+        }
+
+        // load the symbol
+        std::cout << "Loading symbol divide_into_files..." << std::endl;
+        typedef void (*divide_into_files_t)(int parts,std::string,std::string);
+
+        // reset errors
+        dlerror();
+        divide_into_files_t divide_into_files = (divide_into_files_t) dlsym(handle, "divide_into_files");
+        const char *dlsym_error = dlerror();
+        if (dlsym_error) {
+            std::cerr << "Cannot load symbol 'divide_into_files': " << dlsym_error << std::endl;
+            dlclose(handle);
+            return false;
+        }
+
+        std::cout << "Calling divide_into_files..." << std::endl;
+        divide_into_files(m_oSlaves.size(),input_file,output_dir);
+
+        // close the library
+        std::cout << "Closing library..." << std::endl;
+        dlclose(handle);
+	return true;
+    }
+    
     void onRecvAck(boost::shared_ptr<AckNodeMsg> pMsg, ffnet::EndpointPtr_t pEP)
     {
         const std::vector<slave_point_spt> & points = pMsg->all_slave_points();
@@ -53,6 +92,47 @@ public:
             m_oSlaves.push_back(sp);
             m_oNNFF.addTCPClient(sp);
         }
+        //Depart data into pieces based on slave number.
+        //make the output dir
+	std::string output_dir;
+	if((output_dir = getcwd(NULL,0)) == "")
+	  std::cout << "Error when getcwd!" << std::endl;
+	output_dir += GLOBALFILENAME;
+	if(access(output_dir.c_str(),F_OK) == -1){
+	  mkdir(output_dir.c_str(),S_IRWXU);
+	}
+	std::cout << "output DIR = " << output_dir << std::endl;
+        divideInputData("/home/sherry/ffsae/data/mnist_uint8.mat",output_dir.c_str());
+    }
+        
+    bool send_data_from_dir(std::string input_dir,std::string ip,std::string path)//only read one .part file
+    {
+        std::string file_name;
+	bool retVal = false;
+        DIR* dirp;
+        struct dirent* direntp;
+        dirp = opendir(input_dir.c_str());
+        if(dirp != NULL) {
+            while((direntp = readdir(dirp)) != NULL) {
+                file_name = direntp->d_name;
+                std::cout << "file_name = " << file_name << std::endl;
+                int dotIndex = file_name.find_last_of('.');
+                if(dotIndex != std::string::npos && file_name.substr(dotIndex,file_name.length() - dotIndex) == ".part")
+                {
+                    std::cout << "find input_file " << file_name << std::endl;
+                    file_name = input_dir + "/" + file_name;
+		    retVal = true;
+                    break;
+                }
+            }
+            closedir(dirp);
+            if(file_send(file_name,ip,path))//send file and delete the local version
+	    {
+	      remove(file_name.c_str());
+	      std::cout << "Remove file '" << file_name << "'" << std::endl;
+	    }	    
+        }
+        return retVal;
     }
     
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
@@ -60,26 +140,35 @@ public:
         std::string & slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         //Send file here!
-        file_send("../confs/slave_net_conf.ini",pEP->address().to_string(),slave_path);
+        file_send(UDL,pEP->address().to_string(),slave_path);
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
-        
+        send_data_from_dir(static_cast<std::string>(".") + GLOBALFILENAME,pEP->address().to_string(),slave_path);
+	
+	
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
     }
 
 protected:
     ffnet::NetNervureFromFile &     m_oNNFF;
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
-
+    std::string UDL;
 };
 
 int main(int argc, char *argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
     //TODO(sherryshare) pass user defined library (UDL) as an argument!
-
+    std::string UDLStr = "/home/sherry/ffsae/lib/libffsae.so";
+    if(argc > 1) {
+        std::stringstream ss_argv;
+        ss_argv << argv[1];
+        ss_argv >> UDLStr;   
+    }
+    std::cout << "User defined library (UDL) = " << UDLStr << std::endl;
+    
     ffnet::NetNervureFromFile nnff("../confs/dl_master_net_conf.ini");
-    DLMaster master(nnff);
+    DLMaster master(nnff,UDLStr);
 
     nnff.addNeedToRecvPkg<AckNodeMsg>(boost::bind(&DLMaster::onRecvAck, &master, _1, _2));
     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLMaster::onRecvSendFileDirAck, &master, _1, _2));

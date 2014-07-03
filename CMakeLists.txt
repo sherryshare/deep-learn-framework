@@ -29,7 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 add_executable(dl_master ${cmn_src} src/tools/dl_master.cpp)
-target_link_libraries(dl_master curl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(dl_master curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(dl_worker ${cmn_src} src/tools/dl_worker.cpp)
 target_link_libraries(dl_worker curl network boost_thread boost_date_time boost_system boost_serialization pthread)
