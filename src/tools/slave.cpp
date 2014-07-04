@@ -8,7 +8,6 @@
 #include <boost/shared_ptr.hpp>
 #include <stdio.h>
 
-
 //! This is global thing!
 class Slave{
 public:
@@ -69,14 +68,12 @@ public:
     {
         boost::shared_ptr<FileSendDirAck> pReply(new FileSendDirAck());
         //Specify the dire path here
-        pReply->dir() = "/home/sherry";
-	if((pReply->dir() = getcwd(NULL,0)) == "")
-	  std::cout << "Error when getcwd!" << std::endl;
-	pReply->dir() += "/globalFiles";
-	if(access(pReply->dir().c_str(),F_OK) == -1){
-	  mkdir(pReply->dir().c_str(),S_IRWXU);
-	}
-	std::cout << "DIR = " << pReply->dir() << std::endl;
+	if((pReply->dir() = newDirAtCWD(GLOBALFILENAME,"/home/sherry")) == "")
+        {
+            std::cout << "Error when make output dir!" << std::endl;
+            return;
+        }
+        std::cout << "DIR = " << pReply->dir() << std::endl;
         m_oNNFF.send(pReply, pEP);
     }
     

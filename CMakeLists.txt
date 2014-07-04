@@ -21,6 +21,7 @@ set(cmn_src src/common/common.h
     src/pkgs/file_send.cpp
     src/pkgs/heart_beat.cpp
     src/pkgs/req_nodes.cpp
+    src/pkgs/sae_handles.cpp
     src/utils/utils.h
     src/utils/utils.cpp
   )
@@ -32,13 +33,13 @@ add_executable(dl_master ${cmn_src} src/tools/dl_master.cpp)
 target_link_libraries(dl_master curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(dl_worker ${cmn_src} src/tools/dl_worker.cpp)
-target_link_libraries(dl_worker curl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(dl_worker curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(rm_master ${cmn_src} src/tools/rm_master.cpp)
-target_link_libraries(rm_master curl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(rm_master curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(slave ${cmn_src} src/tools/slave.cpp)
-target_link_libraries(slave curl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(slave curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(test_file_send ${cmn_src} src/tools/test_file_send.cpp)
-target_link_libraries(test_file_send  curl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(test_file_send curl dl network boost_thread boost_date_time boost_system boost_serialization pthread)
