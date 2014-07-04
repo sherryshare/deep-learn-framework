@@ -8,7 +8,8 @@
 #include <dirent.h>
 #include <boost/any.hpp>
 
-#define GLOBALFILENAME "/globalFiles"
+#define GLOBALFILENAME "globalFiles"
+#define ORIGININPUT "/home/sherry/ffsae/data/mnist_uint8.mat"
 
 class DLMaster {
 
@@ -43,17 +44,8 @@ public:
         }
     }
 
-    bool divideInputData(std::string input_file,std::string output_dir)
+    bool divideInputData(void * handle,std::string input_file,std::string output_dir)
     {
-        // open the library
-        std::cout << "Opening " << UDL << "..." << std::endl;
-        void * handle = dlopen(UDL.c_str(), RTLD_LAZY);
-
-        if (!handle) {
-            std::cerr << "Cannot open library: " << dlerror() << std::endl;
-            return false;
-        }
-
         // load the symbol
         std::cout << "Loading symbol divide_into_files..." << std::endl;
         typedef void (*divide_into_files_t)(int parts,std::string,std::string);
@@ -71,23 +63,11 @@ public:
         std::cout << "Calling divide_into_files..." << std::endl;
         divide_into_files(m_oSlaves.size(),input_file,output_dir);
 
-        // close the library
-        std::cout << "Closing library..." << std::endl;
-        dlclose(handle);
         return true;
     }
 
-    boost::any initParameterServer(void)
+    boost::any initParameterServer(void * handle)
     {
-        // open the library
-        std::cout << "Opening " << UDL << "..." << std::endl;
-        void * handle = dlopen(UDL.c_str(), RTLD_LAZY);
-
-        if (!handle) {
-            std::cerr << "Cannot open library: " << dlerror() << std::endl;
-            return nullptr;
-        }
-
         // load the symbol
         std::cout << "Loading symbol SAE_create..." << std::endl;
         typedef boost::any (*SAE_create_t)();
@@ -97,18 +77,90 @@ public:
         SAE_create_t SAE_create = (SAE_create_t) dlsym(handle, "SAE_create");
         const char *dlsym_error = dlerror();
         if (dlsym_error) {
-            std::cerr << "Cannot load symbol 'divide_into_files': " << dlsym_error << std::endl;
+            std::cerr << "Cannot load symbol 'SAE_create': " << dlsym_error << std::endl;
             dlclose(handle);
             return nullptr;
         }
 
-        std::cout << "Calling divide_into_files..." << std::endl;
+        std::cout << "Calling SAE_create..." << std::endl;
         boost::any psae = SAE_create();
 
+        return psae;
+    }
+
+    bool trainSAE(void * handle,boost::any sae_pointer,std::string data_dir)
+    {
+        // load the symbol
+        std::cout << "Loading symbol SAE_run..." << std::endl;
+        typedef bool (*SAE_run_t)(boost::any sae_pointer,std::string data_dir);
+
+        // reset errors
+        dlerror();
+        SAE_run_t SAE_run = (SAE_run_t) dlsym(handle, "SAE_run");
+        const char *dlsym_error = dlerror();
+        if (dlsym_error) {
+            std::cerr << "Cannot load symbol 'SAE_run': " << dlsym_error << std::endl;
+            dlclose(handle);
+            return nullptr;
+        }
+
+        std::cout << "Calling SAE_run..." << std::endl;
+        return SAE_run(sae_pointer,data_dir);
+    }
+
+    bool trainNN(void * handle,boost::any sae_pointer,std::string input_file)
+    {
+        // load the symbol
+        std::cout << "Loading symbol train_NN..." << std::endl;
+        typedef void (*train_NN_t)(boost::any sae_pointer,std::string input_file);
+
+        // reset errors
+        dlerror();
+        train_NN_t train_NN = (train_NN_t) dlsym(handle, "train_NN");
+        const char *dlsym_error = dlerror();
+        if (dlsym_error) {
+            std::cerr << "Cannot load symbol 'train_NN': " << dlsym_error << std::endl;
+            dlclose(handle);
+            return false;
+        }
+
+        std::cout << "Calling train_NN..." << std::endl;
+        train_NN(sae_pointer,input_file);
+        return true;
+    }
+
+
+    inline void * openLibrary(void)
+    {
+        // open the library
+        std::cout << "Opening " << UDL << "..." << std::endl;
+        void * handle = dlopen(UDL.c_str(), RTLD_LAZY);
+        if (!handle) {
+            std::cerr << "Cannot open library: " << dlerror() << std::endl;
+            return nullptr;
+        }
+        return handle;
+    }
+
+    inline void closeLibrary(void * handle)
+    {
         // close the library
         std::cout << "Closing library..." << std::endl;
         dlclose(handle);
-        return psae;
+    }
+
+    inline std::string newDirAtCWD(std::string newFileName)
+    {
+        std::string output_dir;
+        if((output_dir = getcwd(NULL,0)) == "") {
+            std::cout << "Error when getcwd!" << std::endl;
+            return output_dir;
+        }
+        output_dir += static_cast<std::string>("/") + newFileName;
+        if(access(output_dir.c_str(),F_OK) == -1) {
+            mkdir(output_dir.c_str(),S_IRWXU);
+        }
+        return output_dir;
     }
 
     void onRecvAck(boost::shared_ptr<AckNodeMsg> pMsg, ffnet::EndpointPtr_t pEP)
@@ -130,15 +182,20 @@ public:
         //Depart data into pieces based on slave number.
         //make the output dir
         std::string output_dir;
-        if((output_dir = getcwd(NULL,0)) == "")
-            std::cout << "Error when getcwd!" << std::endl;
-        output_dir += GLOBALFILENAME;
-        if(access(output_dir.c_str(),F_OK) == -1) {
-            mkdir(output_dir.c_str(),S_IRWXU);
+        if((output_dir = newDirAtCWD(GLOBALFILENAME)) == "")
+        {
+            std::cout << "Error when make output dir!" << std::endl;
+            return;
         }
         std::cout << "output DIR = " << output_dir << std::endl;
-        divideInputData("/home/sherry/ffsae/data/mnist_uint8.mat",output_dir.c_str());
-	boost::any psae = initParameterServer();
+        void * handle = openLibrary();
+
+        divideInputData(handle,ORIGININPUT,output_dir.c_str());
+        sae_ptr = initParameterServer(handle);
+        trainSAE(handle,sae_ptr,output_dir);
+	trainNN(handle,sae_ptr,ORIGININPUT);
+
+        closeLibrary(handle);
     }
 
     bool send_data_from_dir(std::string input_dir,std::string ip,std::string path)//only read one .part file
@@ -179,7 +236,7 @@ public:
         file_send(UDL,pEP->address().to_string(),slave_path);
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
-        send_data_from_dir(static_cast<std::string>(".") + GLOBALFILENAME,pEP->address().to_string(),slave_path);
+        send_data_from_dir(static_cast<std::string>("./") + GLOBALFILENAME,pEP->address().to_string(),slave_path);
 
 
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
@@ -189,6 +246,7 @@ protected:
     ffnet::NetNervureFromFile &     m_oNNFF;
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
     std::string UDL;
+    boost::any sae_ptr;
 };
 
 int main(int argc, char *argv[])
