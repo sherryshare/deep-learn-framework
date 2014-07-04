@@ -128,6 +128,28 @@ public:
         train_NN(sae_pointer,input_file);
         return true;
     }
+    
+    bool deleteSAE(void * handle, boost::any sae_pointer)
+    {
+      // load the symbol
+        std::cout << "Loading symbol SAE_delete..." << std::endl;
+        typedef void (*SAE_delete_t)(boost::any sae_pointer);
+
+        // reset errors
+        dlerror();
+        SAE_delete_t SAE_delete = (SAE_delete_t) dlsym(handle, "SAE_delete");
+        const char *dlsym_error = dlerror();
+        if (dlsym_error) {
+            std::cerr << "Cannot load symbol 'SAE_delete': " << dlsym_error << std::endl;
+            dlclose(handle);
+            return false;
+        }
+
+        std::cout << "Calling SAE_delete..." << std::endl;
+        SAE_delete(sae_pointer);
+	sae_pointer = nullptr;//necessary?
+        return true;
+    }
 
 
     inline void * openLibrary(void)
@@ -194,7 +216,7 @@ public:
         sae_ptr = initParameterServer(handle);
         trainSAE(handle,sae_ptr,output_dir);
 	trainNN(handle,sae_ptr,ORIGININPUT);
-
+	deleteSAE(handle,sae_ptr);
         closeLibrary(handle);
     }
 
