@@ -5,9 +5,13 @@
 #include "utils/utils.h"
 #include "pkgs/file_send.h"
 #include "pkgs/sae_handles.h"
+#include "dsource/divide.h"
+#include "sae/sae.h"
+#include "sae/sae_UDL.h"
 
+using namespace ff;
 class DLMaster {
-
+  
 public:
     DLMaster(ffnet::NetNervureFromFile & nnff, std::string UDLStr, std::string pathStr)
         : m_oNNFF(nnff), UDL(UDLStr), data_path(pathStr) {}
@@ -68,14 +72,11 @@ public:
             return;
         }
         std::cout << "output DIR = " << output_dir << std::endl;
-	if((UDL_handle = openLibrary(UDL)) == nullptr)
-	  return;
-        divideInputData(UDL_handle,data_path,output_dir.c_str(),m_oSlaves.size());
-	sae_ptr = initParameterServer(UDL_handle);
-        trainSAE(UDL_handle,sae_ptr,output_dir);
-	trainNN(UDL_handle,sae_ptr,data_path);
-	deleteSAE(UDL_handle,sae_ptr);
-        closeLibrary(UDL_handle);
+	
+	divide_into_files(m_oSlaves.size(),data_path,output_dir.c_str());
+	psae = SAE_create();
+        SAE_run(psae,output_dir);
+	train_NN(psae,data_path);
     }
 
     
@@ -99,8 +100,8 @@ protected:
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
     std::string UDL;
     std::string data_path;
-    boost::any sae_ptr;
-    void * UDL_handle;
+    SAE_ptr psae;
+//     void * UDL_handle;
 };
 
 int main(int argc, char *argv[])
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
     //TODO(sherryshare) pass user defined library (UDL) as an argument!
     std::string UDLStr = "/home/sherry/ffsae/lib/libffsae.so";
-    std::string data_path = "/home/sherry/ffsae/data/mnist_uint8.mat";
+    std::string data_path = "../data/mnist_uint8.mat";
     if(argc > 1) {//UDL argc
         std::stringstream ss_argv;
         ss_argv << argv[1];

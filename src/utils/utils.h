@@ -1,15 +1,22 @@
-#ifndef UTILS_H_
-#define UTILS_H_
-
+#pragma once
 #include <network.h>
 #include <sstream>
 #include "common/common.h"
+#include <chrono>
+#include <functional>
 #include <dlfcn.h>//dymanic library
 
 #define GLOBALFILENAME "globalFiles"
 
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
+
+namespace ff{
+
+int count_elapse_microsecond(const std::function<void ()> & f);
+int count_elapse_second(const std::function<void ()> & f);
+
+
 
 // inline void * openLibrary(std::string libStr);
 // inline void closeLibrary(void * handle);
@@ -51,5 +58,4 @@ inline std::string newDirAtCWD(std::string newFileName, std::string backUpPath =
     }
     return output_dir;
 }
-
-#endif
+};//end namespace ff

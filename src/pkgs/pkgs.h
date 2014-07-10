@@ -1,5 +1,7 @@
-#ifndef FFDL_PKGS_PKGS_H_
-#define FFDL_PKGS_PKGS_H_
+// #ifndef FFDL_PKGS_PKGS_H_
+// #define FFDL_PKGS_PKGS_H_
+
+#pragma once
 
 #include <network.h>
 #include "common/common.h"
@@ -132,4 +134,4 @@ public:
 protected:
     std::string m_strCmd;
 };
-#endif
+// #endif

@@ -8,6 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdio.h>
 
+using namespace ff;
 //! This is global thing!
 class Slave{
 public:

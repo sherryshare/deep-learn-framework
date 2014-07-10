@@ -2,6 +2,8 @@
 
 using namespace std;
 
+namespace ff{
+
 /* NOTE: if you want this example to work on Windows with libcurl as a
    DLL, you MUST also provide a read callback with CURLOPT_READFUNCTION.
    Failing to do so will give you a crash since a DLL may not use the
@@ -122,4 +124,4 @@ bool file_send(string input_file, string ip, string pwd, string output_file)
   return ret;
 }
 
-
+}//end namespace ff
