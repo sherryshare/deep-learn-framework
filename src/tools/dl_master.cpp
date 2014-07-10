@@ -7,14 +7,14 @@
 #include "pkgs/sae_handles.h"
 #include "dsource/divide.h"
 #include "sae/sae.h"
-#include "sae/sae_UDL.h"
+#include "sae/sae_from_config.h"
 
 using namespace ff;
 class DLMaster {
-  
+
 public:
-    DLMaster(ffnet::NetNervureFromFile & nnff, std::string UDLStr, std::string pathStr)
-        : m_oNNFF(nnff), UDL(UDLStr), data_path(pathStr) {}
+    DLMaster(ffnet::NetNervureFromFile & nnff, std::string sae_config_file, std::string fbnn_config_file)
+        : m_oNNFF(nnff), SdAEConfigFileStr(sae_config_file), FBNNConfigFileStr(fbnn_config_file) {}
 
     void    onConnSucc(ffnet::TCPConnectionBase *pConn)
     {
@@ -38,13 +38,13 @@ public:
                         it->port() == m_oSlaves[i]->port())
                 {
                     m_oNNFF.send(reqmsg, it);
-		    std::cout << "send request message to " << it->address() << std::endl;
+                    std::cout << "send request message to " << it->address() << std::endl;
                 }
             }
         }
     }
 
-    
+
 
     void onRecvAck(boost::shared_ptr<AckNodeMsg> pMsg, ffnet::EndpointPtr_t pEP)
     {
@@ -61,7 +61,7 @@ public:
                     )));
             m_oSlaves.push_back(sp);
             m_oNNFF.addTCPClient(sp);
-	    std::cout << "add TCP Client: " << points[i]->ip_addr <<" : "<<points[i]->tcp_port << std::endl;
+            std::cout << "add TCP Client: " << points[i]->ip_addr <<" : "<<points[i]->tcp_port << std::endl;
         }
         //Depart data into pieces based on slave number.
         //make the output dir
@@ -72,21 +72,23 @@ public:
             return;
         }
         std::cout << "output DIR = " << output_dir << std::endl;
-	
-	divide_into_files(m_oSlaves.size(),data_path,output_dir.c_str());
-	psae = SAE_create();
-        SAE_run(psae,output_dir);
-	train_NN(psae,data_path);
+
+        pSAE_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
+        divide_into_files(m_oSlaves.size(),pSAE_nc->get<std::string>("path.input-file"),output_dir.c_str());
+        psae = SAE_create(pSAE_nc);
+        SAE_run(psae,output_dir,pSAE_nc);
+        pFFNN_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+        train_NN(psae,pFFNN_nc);
     }
 
-    
+
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::string & slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         //Send file here!
-        file_send(UDL,pEP->address().to_string(),slave_path);
+	file_send(SdAEConfigFileStr,pEP->address().to_string(),slave_path);
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
         send_data_from_dir(static_cast<std::string>("./") + GLOBALFILENAME,pEP->address().to_string(),slave_path);
@@ -98,9 +100,12 @@ public:
 protected:
     ffnet::NetNervureFromFile &     m_oNNFF;
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
-    std::string UDL;
-    std::string data_path;
-    SAE_ptr psae;
+    std::string SdAEConfigFileStr;
+    std::string FBNNConfigFileStr;
+    ff::SAE_ptr psae;
+    NervureConfigurePtr pSAE_nc;
+    NervureConfigurePtr pFFNN_nc;
+    
 //     void * UDL_handle;
 };
 
@@ -108,24 +113,24 @@ int main(int argc, char *argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
     //TODO(sherryshare) pass user defined library (UDL) as an argument!
-    std::string UDLStr = "/home/sherry/ffsae/lib/libffsae.so";
-    std::string data_path = "../data/mnist_uint8.mat";
+    std::string sae_config_file = "../confs/apps/SdAE_train.ini";
+    std::string fbnn_config_file = "../confs/apps/FFNN_train.ini";
     if(argc > 1) {//UDL argc
         std::stringstream ss_argv;
         ss_argv << argv[1];
-        ss_argv >> UDLStr;
+        ss_argv >> sae_config_file;
     }
-    std::cout << "User defined library (UDL) = " << UDLStr << std::endl;
-    
+    std::cout << "sae config file = " << sae_config_file << std::endl;
+
     if(argc > 2) {//data path argc
         std::stringstream ss_argv;
         ss_argv << argv[1];
-        ss_argv >> data_path;
-    }    
-    std::cout << "Input data path = " << data_path << std::endl;
+        ss_argv >> fbnn_config_file;
+    }
+    std::cout << "fbnn config file = " << fbnn_config_file << std::endl;
 
     ffnet::NetNervureFromFile nnff("../confs/dl_master_net_conf.ini");
-    DLMaster master(nnff,UDLStr,data_path);
+    DLMaster master(nnff,sae_config_file,fbnn_config_file);
 
     nnff.addNeedToRecvPkg<AckNodeMsg>(boost::bind(&DLMaster::onRecvAck, &master, _1, _2));
     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLMaster::onRecvSendFileDirAck, &master, _1, _2));

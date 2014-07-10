@@ -25,7 +25,7 @@ set(sae_src src/dsource/read.cpp
   src/dsource/divide.cpp
   src/nn/fbnn.cpp
   src/sae/sae.cpp
-  src/sae/sae_UDL.cpp
+  src/sae/sae_from_config.cpp
   src/utils/math.cpp
   src/utils/matlib.cpp
   src/utils/utils.cpp
@@ -43,9 +43,8 @@ SET_TARGET_PROPERTIES(ffdl_s PROPERTIES OUTPUT_NAME "ffdl")
 add_executable(t_divide src/tools/test_divide.cpp)
 target_link_libraries(t_divide curl dl ffdl matio blaze)
 
-
 add_executable(dl_master src/tools/dl_master.cpp)
-target_link_libraries(dl_master curl dl ffdl blaze matio network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(dl_master curl dl ffdl matio blaze network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(dl_worker src/tools/dl_worker.cpp)
 target_link_libraries(dl_worker curl dl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)

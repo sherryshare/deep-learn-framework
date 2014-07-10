@@ -12,7 +12,7 @@ namespace ff
   class SAE
   {
     public:
-        SAE(const Arch_t & arch);
+        SAE(const Arch_t & arch,std::string activationFunction = "sigm", double learningRate = 1, double inputZeroMaskedFraction = 0.5);
         void    SAETrain(const FMatrix & train_x, const Opts & opts, const SAE_ptr & pSAE = nullptr);
 	std::vector<FBNN_ptr> & get_m_oAEs(void){return m_oAEs;};
 

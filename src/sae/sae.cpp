@@ -2,10 +2,10 @@
 
 namespace ff
 {
-  SAE::SAE(const Arch_t & arch)
-      : m_strActivationFunction("sigm")
-      , m_fLearningRate(1)//0.1
-      , m_fInputZeroMaskedFraction(0.5)
+  SAE::SAE(const Arch_t & arch,std::string activationFunction, double learningRate, double inputZeroMaskedFraction)
+      : m_strActivationFunction(activationFunction)
+      , m_fLearningRate(learningRate)
+      , m_fInputZeroMaskedFraction(inputZeroMaskedFraction)
   {
       std::cout << "SAE initialize!" << std::endl;
       for(size_t i = 1; i < numel(arch); ++i)
