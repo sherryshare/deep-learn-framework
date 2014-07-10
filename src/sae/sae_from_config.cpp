@@ -105,6 +105,12 @@ void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
 
     for(int i = 0; i < m_oWs.size() - 1; i++)
     {
+	if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
+	  m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
+	{
+	  std::cout << "FFNN structure doesn't match SAE structure! Train by default value from level " << i << "..." << std::endl;
+	  break;
+	}
         *m_oWs[i] = *(psae->get_m_oAEs()[i]->get_m_oWs())[0];//nn.W{i} = sae.ae{i}.W{1};
     }
 
