@@ -18,7 +18,6 @@ set(cmn_src src/pkgs/ack_nodes.cpp
     src/pkgs/file_send.cpp
     src/pkgs/heart_beat.cpp
     src/pkgs/req_nodes.cpp
-    src/pkgs/sae_handles.cpp
   )
   
 set(sae_src src/dsource/read.cpp

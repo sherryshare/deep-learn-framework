@@ -3,53 +3,63 @@
 
 namespace ff
 {
-      const double      FBNN::m_fMomentum = 0.5;
-      const double      FBNN::m_fScalingLearningRate= 0.9;//1
-      const double      FBNN::m_fWeithtPenaltyL2 = 0;
-      const double      FBNN::m_fNonSparsityPenalty = 0;
-      const double      FBNN::m_fSparsityTarget = 0.05;
-      const double      FBNN::m_fDropoutFraction = 0;
-  FBNN::FBNN(const Arch_t & arch, std::string activeStr, int learningRate, double zeroMaskedFraction, bool testing, std::string outputStr)
-      : m_oArch(arch)
-      , m_iN(numel(arch))
-      , m_strActivationFunction(activeStr)
-      , m_iLearningRate(learningRate)
-      , m_fInputZeroMaskedFraction(zeroMaskedFraction)
-      , m_fTesting(testing)
-      , m_strOutput(outputStr)
-  {
-      for(int i = 1; i < m_iN; ++i)
-      {
- 	  FMatrix f = (rand(m_oArch[i], m_oArch[i-1] + 1) - 0.5) * (2 * 4 * sqrt(6.0/(m_oArch[i] + m_oArch[i-1])));//based on nnsetup.m
-	  m_oWs.push_back(std::make_shared<FMatrix>(f));
-	  if(m_fMomentum > 0)
-	  {
-	    FMatrix z = zeros(f.rows(), f.columns());
-	    m_oVWs.push_back(std::make_shared<FMatrix>(z));
-	  }
-	  if(m_fNonSparsityPenalty > 0)
-	  {
-	    FMatrix p = zeros(1, m_oArch[i]);
-	    m_oPs.push_back(std::make_shared<FMatrix>(p));
-	  }
-      }
+const double      FBNN::m_fMomentum = 0.5;
+const double      FBNN::m_fScalingLearningRate= 0.9;//1
+const double      FBNN::m_fWeithtPenaltyL2 = 0;
+const double      FBNN::m_fNonSparsityPenalty = 0;
+const double      FBNN::m_fSparsityTarget = 0.05;
+const double      FBNN::m_fDropoutFraction = 0;
+FBNN::FBNN(const Arch_t& arch,
+           const std::string& activeStr,
+           const int learningRate,
+           const double zeroMaskedFraction,
+           const bool testing,
+           const std::string& outputStr)
+    : m_oArch(arch)
+    , m_iN(numel(arch))
+    , m_strActivationFunction(activeStr)
+    , m_iLearningRate(learningRate)
+    , m_fInputZeroMaskedFraction(zeroMaskedFraction)
+    , m_fTesting(testing)
+    , m_strOutput(outputStr)
+{
+    for(int i = 1; i < m_iN; ++i)
+    {
+        FMatrix f = (rand(m_oArch[i], m_oArch[i-1] + 1) - 0.5) * (2 * 4 * sqrt(6.0/(m_oArch[i] + m_oArch[i-1])));//based on nnsetup.m
+        m_oWs.push_back(std::make_shared<FMatrix>(f));
+        if(m_fMomentum > 0)
+        {
+            FMatrix z = zeros(f.rows(), f.columns());
+            m_oVWs.push_back(std::make_shared<FMatrix>(z));
+        }
+        if(m_fNonSparsityPenalty > 0)
+        {
+            FMatrix p = zeros(1, m_oArch[i]);
+            m_oPs.push_back(std::make_shared<FMatrix>(p));
+        }
+    }
 
-  }
+}
 
-  
-  //trains a neural net
-  void FBNN::train(const FMatrix & train_x, const FMatrix & train_y, const Opts & opts, const FMatrix & valid_x, const FMatrix & valid_y, const FBNN_ptr pFBNN)
-  {
-      int ibatchNum = train_x.rows() / opts.batchsize + (train_x.rows() % opts.batchsize != 0);
-      FMatrix L = zeros(opts.numpochs * ibatchNum, 1);
-      m_oLp = std::make_shared<FMatrix>(L);
-      Loss loss;
+
+//trains a neural net
+void FBNN::train(const FMatrix& train_x,
+                 const FMatrix& train_y,
+                 const Opts& opts,
+                 const FMatrix& valid_x,
+                 const FMatrix& valid_y,
+                 const FBNN_ptr pFBNN)
+{
+    int ibatchNum = train_x.rows() / opts.batchsize + (train_x.rows() % opts.batchsize != 0);
+    FMatrix L = zeros(opts.numpochs * ibatchNum, 1);
+    m_oLp = std::make_shared<FMatrix>(L);
+    Loss loss;
 //       std::cout << "numpochs = " << opts.numpochs << std::endl;
-      for(int i = 0; i < opts.numpochs; ++i)
-      {
-	  std::cout << "start numpochs " << i << std::endl;	  
-	  int elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this]{
-	    std::vector<int> iRandVec;
+    for(int i = 0; i < opts.numpochs; ++i)
+    {
+        std::cout << "start numpochs " << i << std::endl;
+        int elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this] {
+            std::vector<int> iRandVec;
             randperm(train_x.rows(),iRandVec);
             std::cout << "start batch: ";
             for(int j = 0; j < ibatchNum; ++j)
@@ -60,11 +70,11 @@ namespace ff
 // 		    TMutex::scoped_lock lock;
 // 		    lock.acquire(pFBNN->W_RWMutex,false);
 // 		    lock.release();//reader lock tbb
-		    boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);		    
+                    boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);
                     set_m_oWs(pFBNN->get_m_oWs());
                     if(m_fMomentum > 0)
                         set_m_oVWs(pFBNN->get_m_oVWs());
-		    rlock.unlock();
+                    rlock.unlock();
                 }
                 int curBatchSize = opts.batchsize;
                 if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
@@ -89,50 +99,53 @@ namespace ff
 // 		    TMutex::scoped_lock lock;
 // 		    lock.acquire(W_RWMutex);
 // 		    lock.release();//writer lock tbb
-		    boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
+                    boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
                     pFBNN->set_m_odWs(m_odWs);
                     pFBNN->nnapplygrads();
-		    wlock.unlock();
+                    wlock.unlock();
                 }
 // 	      std::cout << "end batch " << j << std::endl;
             }
             std::cout << std::endl;
-	  });
-	  std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
-	  //loss calculate use nneval
-	  if(valid_x.rows() == 0 || valid_y.rows() == 0){
-	    nneval(loss, train_x, train_y);
-	    std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
-	  }
-	  else{
-	    nneval(loss, train_x, train_y, valid_x, valid_y);
-	    std::cout << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back() << std::endl;
-	  }
-	  std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
-	  std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;      
-	  m_iLearningRate *= m_fScalingLearningRate;    
-	  
-// 	  std::cout << "end numpochs " << i << std::endl;
-      }
+        });
+        std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
+        //loss calculate use nneval
+        if(valid_x.rows() == 0 || valid_y.rows() == 0) {
+            nneval(loss, train_x, train_y);
+            std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
+        }
+        else {
+            nneval(loss, train_x, train_y, valid_x, valid_y);
+            std::cout << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back() << std::endl;
+        }
+        std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
+        std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;
+        m_iLearningRate *= m_fScalingLearningRate;
 
-  }
-  void FBNN::train(const FMatrix & train_x, const FMatrix & train_y, const Opts & opts, const FBNN_ptr pFBNN)
-  {
-      FMatrix emptyM;
-      train(train_x,train_y,opts,emptyM,emptyM,pFBNN);      
-  }
-  
-  //NNFF performs a feedforward pass
-  double FBNN::nnff(const FMatrix& x, const FMatrix& y)
-  {
+// 	  std::cout << "end numpochs " << i << std::endl;
+    }
+
+}
+void FBNN::train(const FMatrix& train_x,
+                 const FMatrix& train_y,
+                 const Opts& opts,
+                 const FBNN_ptr pFBNN)
+{
+    FMatrix emptyM;
+    train(train_x,train_y,opts,emptyM,emptyM,pFBNN);
+}
+
+//NNFF performs a feedforward pass
+double FBNN::nnff(const FMatrix& x, const FMatrix& y)
+{
 //     std::cout << "start nnff x = (" << x.rows() << "," << x.columns() << ")" << std::endl;
     double L = 0;
     if(m_oAs.empty())
     {
-      for(int i = 0; i < m_iN; ++i)
-	m_oAs.push_back(std::make_shared<FMatrix>(FMatrix()));
+        for(int i = 0; i < m_iN; ++i)
+            m_oAs.push_back(std::make_shared<FMatrix>(FMatrix()));
     }
-    *m_oAs[0] = addPreColumn(x,1);    
+    *m_oAs[0] = addPreColumn(x,1);
     if(m_fDropoutFraction > 0 && !m_fTesting)
     {
         if(m_odOMs.empty())//clear dropOutMask
@@ -141,211 +154,215 @@ namespace ff
                 m_odOMs.push_back(std::make_shared<FMatrix>(FMatrix()));
         }
     }
-    
+
 //     std::cout << "start feedforward" << std::endl;
     //feedforward pass
     for(int i = 1; i < m_iN - 1; ++i)
     {
 //       std::cout << "activation function" << std::endl;
-      //activation function
-      if(m_strActivationFunction == "sigm")
-      {	
-	//Calculate the unit's outputs (including the bias term)
-	*m_oAs[i] = sigm((*m_oAs[i-1]) * blaze::trans(*m_oWs[i-1]));
-      }
-      else if(m_strActivationFunction == "tanh_opt")
-      {
-	*m_oAs[i] = tanh_opt((*m_oAs[i-1]) * blaze::trans(*m_oWs[i-1]));
-      }
-      
+        //activation function
+        if(m_strActivationFunction == "sigm")
+        {
+            //Calculate the unit's outputs (including the bias term)
+            *m_oAs[i] = sigm((*m_oAs[i-1]) * blaze::trans(*m_oWs[i-1]));
+        }
+        else if(m_strActivationFunction == "tanh_opt")
+        {
+            *m_oAs[i] = tanh_opt((*m_oAs[i-1]) * blaze::trans(*m_oWs[i-1]));
+        }
+
 //       std::cout << "dropout" << std::endl;
-      //dropout
-      if(m_fDropoutFraction > 0)
-      {
-	if(m_fTesting)
-	  *m_oAs[i] = (*m_oAs[i]) * (1 - m_fDropoutFraction);
-	else
-	{
-	  *m_odOMs[i] = rand(m_oAs[i]->rows(),m_oAs[i]->columns()) > m_fDropoutFraction;
-	  *m_oAs[i] = bitWiseMul(*m_oAs[i],*m_odOMs[i]);
-	}
-      }
-      
+        //dropout
+        if(m_fDropoutFraction > 0)
+        {
+            if(m_fTesting)
+                *m_oAs[i] = (*m_oAs[i]) * (1 - m_fDropoutFraction);
+            else
+            {
+                *m_odOMs[i] = rand(m_oAs[i]->rows(),m_oAs[i]->columns()) > m_fDropoutFraction;
+                *m_oAs[i] = bitWiseMul(*m_oAs[i],*m_odOMs[i]);
+            }
+        }
+
 //       std::cout << "sparsity" << std::endl;
-      //calculate running exponential activations for use with sparsity
-      if(m_fNonSparsityPenalty > 0)
-	*m_oPs[i] =  (*m_oPs[i]) * 0.99 + columnMean(*m_oAs[i]);
-      
+        //calculate running exponential activations for use with sparsity
+        if(m_fNonSparsityPenalty > 0)
+            *m_oPs[i] =  (*m_oPs[i]) * 0.99 + columnMean(*m_oAs[i]);
+
 //       std::cout << "Add the bias term" << std::endl;
-      //Add the bias term
-      *m_oAs[i] = addPreColumn(*m_oAs[i],1);    
+        //Add the bias term
+        *m_oAs[i] = addPreColumn(*m_oAs[i],1);
     }
-    
+
 //     std::cout << "start calculate output" << std::endl;
     if(m_strOutput == "sigm")
     {
-      *m_oAs[m_iN -1] = sigm((*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]));
+        *m_oAs[m_iN -1] = sigm((*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]));
     }
     else if(m_strOutput == "linear")
     {
-      *m_oAs[m_iN -1] = (*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]);
+        *m_oAs[m_iN -1] = (*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]);
     }
     else if(m_strOutput == "softmax")
     {
-      *m_oAs[m_iN -1] = softmax((*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]));
+        *m_oAs[m_iN -1] = softmax((*m_oAs[m_iN-2]) * blaze::trans(*m_oWs[m_iN-2]));
     }
-    
+
 //     std::cout << "start error and loss" << std::endl;
     //error and loss
     m_oEp = std::make_shared<FMatrix>(y - (*m_oAs[m_iN-1]));
-    
+
     if(m_strOutput == "sigm" || m_strOutput == "linear")
     {
-      L = 0.5 * matrixSum(bitWiseSquare(*m_oEp)) / x.rows();
+        L = 0.5 * matrixSum(bitWiseSquare(*m_oEp)) / x.rows();
     }
     else if(m_strOutput == "softmax")
     {
-      L = -matrixSum(bitWiseMul(y,bitWiseLog(*m_oAs[m_iN-1]))) / x.rows();
-    }    
+        L = -matrixSum(bitWiseMul(y,bitWiseLog(*m_oAs[m_iN-1]))) / x.rows();
+    }
 //     std::cout << "end nnff" << std::endl;
     return L;
-  }
-  
-  //NNBP performs backpropagation
-  void FBNN::nnbp(void)
-  {
+}
+
+//NNBP performs backpropagation
+void FBNN::nnbp(void)
+{
 //     std::cout << "start nnbp" << std::endl;
     std::vector<FMatrix_ptr> oDs;
     //initialize oDs
-    for(int i = 0; i < m_iN; i++)
-      oDs.push_back(std::make_shared<FMatrix>(FMatrix()));
+    for(int i = 0; i < m_iN; ++i)
+        oDs.push_back(std::make_shared<FMatrix>(FMatrix()));
     if(m_strOutput == "sigm")
     {
-      *oDs[m_iN -1] = bitWiseMul(*m_oEp,bitWiseMul(*m_oAs[m_iN -1],*m_oAs[m_iN -1] - 1));
+        *oDs[m_iN -1] = bitWiseMul(*m_oEp,bitWiseMul(*m_oAs[m_iN -1],*m_oAs[m_iN -1] - 1));
     }
     else if(m_strOutput == "softmax" || m_strOutput == "linear")
     {
-      *oDs[m_iN -1] = - (*m_oEp);
+        *oDs[m_iN -1] = - (*m_oEp);
     }
-    for(int i = m_iN - 2; i > 0; i--)
+    for(int i = m_iN - 2; i > 0; --i)
     {
-      FMatrix d_act;
-      if(m_strActivationFunction == "sigm")
-      {	
-	d_act = bitWiseMul(*m_oAs[i],1 - (*m_oAs[i]));
-      }
-      else if(m_strActivationFunction == "tanh_opt")
-      {
-	d_act = 1.7159 * 2/3 - 2/(3 * 1.7159) * bitWiseSquare(*m_oAs[i]);
-      }
-      
-      if(m_fNonSparsityPenalty > 0)
-      {
-	FMatrix pi = repmat(*m_oPs[i],m_oAs[i]->rows(),1);
-	FMatrix sparsityError = addPreColumn(m_fNonSparsityPenalty * (1 - m_fSparsityTarget) / (1 - pi) - m_fNonSparsityPenalty * m_fSparsityTarget / pi,0);
-	//Backpropagate first derivatives
-	if(i == m_iN - 2)//in this case in oDs there is not the bias term to be removed  
-	{
-	  *oDs[i] = bitWiseMul(*oDs[i+1] * (*m_oWs[i]) + sparsityError,d_act);//Bishop (5.56)
-	}
-	else//in this case in oDs the bias term has to be removed
-	{
-	  *oDs[i] = bitWiseMul(delPreColumn(*oDs[i+1]) * (*m_oWs[i]) + sparsityError,d_act);
-	}
-      }
-      else
-      {      
-	//Backpropagate first derivatives
-	if(i == m_iN - 2)//in this case in oDs there is not the bias term to be removed  
-	{
-	  *oDs[i] = bitWiseMul((*oDs[i+1]) * (*m_oWs[i]),d_act);//Bishop (5.56)
-	}
-	else//in this case in oDs the bias term has to be removed
-	{
-	  *oDs[i] = bitWiseMul(delPreColumn(*oDs[i+1]) * (*m_oWs[i]),d_act);
-	}
-      }
-      
-      if(m_fDropoutFraction > 0)
-      {
-	*oDs[i] = bitWiseMul(*oDs[i],addPreColumn(*m_odOMs[i],1));
-      }
-      
+        FMatrix d_act;
+        if(m_strActivationFunction == "sigm")
+        {
+            d_act = bitWiseMul(*m_oAs[i],1 - (*m_oAs[i]));
+        }
+        else if(m_strActivationFunction == "tanh_opt")
+        {
+            d_act = 1.7159 * 2/3 - 2/(3 * 1.7159) * bitWiseSquare(*m_oAs[i]);
+        }
+
+        if(m_fNonSparsityPenalty > 0)
+        {
+            FMatrix pi = repmat(*m_oPs[i],m_oAs[i]->rows(),1);
+            FMatrix sparsityError = addPreColumn(m_fNonSparsityPenalty * (1 - m_fSparsityTarget) / (1 - pi) - m_fNonSparsityPenalty * m_fSparsityTarget / pi,0);
+            //Backpropagate first derivatives
+            if(i == m_iN - 2)//in this case in oDs there is not the bias term to be removed
+            {
+                *oDs[i] = bitWiseMul(*oDs[i+1] * (*m_oWs[i]) + sparsityError,d_act);//Bishop (5.56)
+            }
+            else//in this case in oDs the bias term has to be removed
+            {
+                *oDs[i] = bitWiseMul(delPreColumn(*oDs[i+1]) * (*m_oWs[i]) + sparsityError,d_act);
+            }
+        }
+        else
+        {
+            //Backpropagate first derivatives
+            if(i == m_iN - 2)//in this case in oDs there is not the bias term to be removed
+            {
+                *oDs[i] = bitWiseMul((*oDs[i+1]) * (*m_oWs[i]),d_act);//Bishop (5.56)
+            }
+            else//in this case in oDs the bias term has to be removed
+            {
+                *oDs[i] = bitWiseMul(delPreColumn(*oDs[i+1]) * (*m_oWs[i]),d_act);
+            }
+        }
+
+        if(m_fDropoutFraction > 0)
+        {
+            *oDs[i] = bitWiseMul(*oDs[i],addPreColumn(*m_odOMs[i],1));
+        }
+
     }
     if(m_odWs.empty())//Initialize m_odWs
     {
-        for(int i = 0; i < m_iN - 1; i++)
+        for(int i = 0; i < m_iN - 1; ++i)
         {
             m_odWs.push_back(std::make_shared<FMatrix>(FMatrix()));
         }
-    }    
-    for(int i = 0; i < m_iN - 1; i++)
+    }
+    for(int i = 0; i < m_iN - 1; ++i)
     {
-      if(i == m_iN - 2)
-      {
-	*m_odWs[i] = trans(*oDs[i+1]) * (*m_oAs[i]) / oDs[i+1]->rows();
-      }
-      else
-      {
-	*m_odWs[i] = trans(delPreColumn(*oDs[i+1])) * (*m_oAs[i]) / oDs[i+1]->rows();
-      }      
-    }  
+        if(i == m_iN - 2)
+        {
+            *m_odWs[i] = trans(*oDs[i+1]) * (*m_oAs[i]) / oDs[i+1]->rows();
+        }
+        else
+        {
+            *m_odWs[i] = trans(delPreColumn(*oDs[i+1])) * (*m_oAs[i]) / oDs[i+1]->rows();
+        }
+    }
 //     std::cout << "end nnbp" << std::endl;
 
-  }
-  //updates weights and biases with calculated gradients
-  void FBNN::nnapplygrads(void )
-  {
+}
+//updates weights and biases with calculated gradients
+void FBNN::nnapplygrads(void )
+{
 //     std::cout << "start nnapplygrads" << std::endl;
     FMatrix dW;
-    for(int i = 0; i < m_iN - 1; i++)
+    for(int i = 0; i < m_iN - 1; ++i)
     {
-      if(m_fWeithtPenaltyL2 > 0)
-	dW = *m_odWs[i] + m_fWeithtPenaltyL2 * addPreColumn(delPreColumn(*m_oWs[i]),0);
-      else
-	dW = *m_odWs[i];
-      dW = m_iLearningRate * dW;
-      
-      if(m_fMomentum > 0)
-      {
-	*m_oVWs[i] = (*m_oVWs[i]) * m_fMomentum + dW;
-	dW = *m_oVWs[i];
-      }
-      
-      *m_oWs[i] -= dW;       
+        if(m_fWeithtPenaltyL2 > 0)
+            dW = *m_odWs[i] + m_fWeithtPenaltyL2 * addPreColumn(delPreColumn(*m_oWs[i]),0);
+        else
+            dW = *m_odWs[i];
+        dW = m_iLearningRate * dW;
+
+        if(m_fMomentum > 0)
+        {
+            *m_oVWs[i] = (*m_oVWs[i]) * m_fMomentum + dW;
+            dW = *m_oVWs[i];
+        }
+
+        *m_oWs[i] -= dW;
     }
 //     std::cout << "end nnapplygrads" << std::endl;
-  }
-  
-  //evaluates performance of neural network
-  void ff::FBNN::nneval(Loss & loss, const FMatrix& train_x, const FMatrix& train_y, const FMatrix& valid_x, const FMatrix& valid_y)
-  {
+}
+
+//evaluates performance of neural network
+void ff::FBNN::nneval(Loss& loss, 
+		      const FMatrix& train_x, 
+		      const FMatrix& train_y, 
+		      const FMatrix& valid_x, 
+		      const FMatrix& valid_y)
+{
 //     std::cout << "start nneval" << std::endl;
     //training performance
     loss.train_error.push_back(nnff(train_x,train_y));
-    
+
     //validation performance
     if(valid_x.rows() != 0 && valid_y.rows() != 0)
-      loss.valid_error.push_back(nnff(valid_x,valid_y));
-    
+        loss.valid_error.push_back(nnff(valid_x,valid_y));
+
     //calc misclassification rate if softmax
     if(m_strOutput == "softmax")
     {
-      loss.train_error_fraction.push_back(nntest(train_x,train_y));
-      if(valid_x.rows() != 0 && valid_y.rows() != 0)
-	loss.valid_error_fraction.push_back(nntest(valid_x,valid_y));
+        loss.train_error_fraction.push_back(nntest(train_x,train_y));
+        if(valid_x.rows() != 0 && valid_y.rows() != 0)
+            loss.valid_error_fraction.push_back(nntest(valid_x,valid_y));
     }
 //     std::cout << "end nneval" << std::endl;
-  }
+}
 
-  void ff::FBNN::nneval(Loss & loss, const FMatrix& train_x, const FMatrix& train_y)
-  {
+void ff::FBNN::nneval(Loss& loss, const FMatrix& train_x, const FMatrix& train_y)
+{
     FMatrix emptyM;
     nneval(loss,train_x,train_y,emptyM,emptyM);
-  }
-  
-  double ff::FBNN::nntest(const FMatrix& x, const FMatrix& y)
-  {
+}
+
+double ff::FBNN::nntest(const FMatrix& x, const FMatrix& y)
+{
 //     std::cout << "start nntest" << std::endl;
     FColumn labels;
     nnpredict(x,y,labels);
@@ -353,16 +370,16 @@ namespace ff
     std::vector<int> bad = findUnequalIndexes(labels,expected);
 //     std::cout << "end nntest" << std::endl;
     return double(bad.size()) / x.rows();//Haven't return bad vector.(nntest.m does)
-  }
-  
-  void ff::FBNN::nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels)
-  {
+}
+
+void ff::FBNN::nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels)
+{
 //     std::cout << "start nnpredict" << std::endl;
     m_fTesting = true;
     nnff(x,zeros(x.rows(),m_oArch[m_iN - 1]));
     m_fTesting = false;
     labels = rowMaxIndexes(*m_oAs[m_iN - 1]);
 //     std::cout << "end nnpredict" << std::endl;
-  }
+}
 
 }

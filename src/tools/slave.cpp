@@ -12,7 +12,7 @@ using namespace ff;
 //! This is global thing!
 class Slave{
 public:
-    Slave(ffnet::NetNervureFromFile & nnff)
+    Slave(ffnet::NetNervureFromFile& nnff)
         : m_oNNFF(nnff)
         , m_b_svr_connected(false)
         , m_b_is_stopped(false){}
@@ -38,7 +38,7 @@ public:
         }
     }
 
-    void    onConnSucc(ffnet::TCPConnectionBase *pConn)
+    void    onConnSucc(ffnet::TCPConnectionBase* pConn)
     {
         auto it = pConn->getRemoteEndpointPtr();
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
@@ -69,7 +69,7 @@ public:
     {
         boost::shared_ptr<FileSendDirAck> pReply(new FileSendDirAck());
         //Specify the dire path here
-	if((pReply->dir() = newDirAtCWD(GLOBALFILENAME,"/home/sherry")) == "")
+	if((pReply->dir() = newDirAtCWD(globalDirStr,"/home/sherry")) == "")
         {
             std::cout << "Error when make output dir!" << std::endl;
             return;
@@ -84,13 +84,13 @@ public:
     }
 
 protected:
-    ffnet::NetNervureFromFile  & m_oNNFF;
+    ffnet::NetNervureFromFile& m_oNNFF;
     bool    m_b_svr_connected;
     ffnet::EndpointPtr_t m_p_svr;
     boost::atomic<bool>    m_b_is_stopped;
 };
 
-void  press_and_stop(ffnet::NetNervureFromFile & nnff, Slave & s)
+void  press_and_stop(ffnet::NetNervureFromFile& nnff, Slave& s)
 {
     std::cout<<"Press any key to quit..."<<std::endl;
     getc(stdin);
@@ -98,7 +98,7 @@ void  press_and_stop(ffnet::NetNervureFromFile & nnff, Slave & s)
     nnff.stop();
     std::cout<<"Stopping, please wait..."<<std::endl;
 }
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "slave.log");
 

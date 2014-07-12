@@ -7,7 +7,7 @@ namespace ff
       return 1.0 * ::rand() / RAND_MAX ;
     }
 
-    FMatrix      rand(int m, int n)
+    FMatrix      rand(const int m, const int n)
     {
         FMatrix res(m, n);
         for(int i = 0; i < m; ++i)
@@ -18,7 +18,7 @@ namespace ff
         return res;
     }
 
-    void randperm(int n, std::vector<int> & iVector)
+    void randperm(const int n, std::vector<int>& iVector)
     {
       iVector.clear();
       for(int i = 0; i < n; ++i)
@@ -26,26 +26,26 @@ namespace ff
       std::random_shuffle(iVector.begin(), iVector.end());
     }
 
-    FMatrix  zeros(int m, int n)
+    FMatrix  zeros(const int m, const int n)
     {
       FMatrix res(m, n, 0.0);
       return res;
     }
 
-    FMatrix     ones(int m, int n)
+    FMatrix     ones(const int m, const int n)
     {
       FMatrix res(m, n, 1.0);
       return res;
     }
     
     ////////////////
-    FMatrix trans(const FMatrix & m)
+    FMatrix trans(const FMatrix& m)
     {
         return blaze::trans(m);
     } 
     
     ///////////////////
-    FMatrix bitWiseMul(const FMatrix & m, const FMatrix & m1)
+    FMatrix bitWiseMul(const FMatrix& m, const FMatrix& m1)
     {
 	if(m.rows() != m1.rows() || m.columns() != m1.columns())
 	{
@@ -63,13 +63,13 @@ namespace ff
         return res;
     }
     
-    FMatrix     delPreColumn(const FMatrix & m )//delete first column of m
+    FMatrix     delPreColumn(const FMatrix& m )//delete first column of m
     {
 	FMatrix res(m.rows(),m.columns() -1);
 	res = submatrix(m,0UL,1UL,m.rows(),m.columns()-1);
 	return res;
     }
-    FMatrix     columnMean(const FMatrix & m )//caculate mean for each column
+    FMatrix     columnMean(const FMatrix& m )//caculate mean for each column
     {
 	FMatrix res(1, m.columns());
 	for(size_t i = 0; i < m.columns(); ++i)
@@ -83,7 +83,7 @@ namespace ff
 	}
 	return res;
     }
-    FColumn     rowMaxIndexes(const FMatrix & m )//find max for each row
+    FColumn     rowMaxIndexes(const FMatrix& m )//find max for each row
     {
 	FColumn res(m.rows(),0);
 	for(size_t i = 0; i < m.rows(); ++i)
@@ -100,7 +100,7 @@ namespace ff
 	}
 	return res;
     }    
-    std::vector<int>	findUnequalIndexes(const FColumn & c, const FColumn & c1)//find unequal indexes in two columns
+    std::vector<int>	findUnequalIndexes(const FColumn& c, const FColumn& c1)//find unequal indexes in two columns
     {
       std::vector<int> res;
       if(c.size() != c1.size()){
@@ -108,14 +108,14 @@ namespace ff
 	res.push_back(-1);//insert -1 as wrong outputs.
 	return res;
       }
-      for(int i = 0; i < c.size(); i++)
+      for(int i = 0; i < c.size(); ++i)
       {
 	if(c[i] != c1[i])
 	  res.push_back(i);
       }     
       return res;
     }
-    double     matrixSum(const FMatrix & m )//caculate mean for each column
+    double     matrixSum(const FMatrix& m )//caculate mean for each column
     {
 	double sum = 0.0;
 	for(size_t i = 0; i < m.rows(); ++i)
@@ -127,7 +127,7 @@ namespace ff
 	}
 	return sum;
     }
-    FMatrix bitWiseSquare(const FMatrix & m)
+    FMatrix bitWiseSquare(const FMatrix& m)
     {
 	FMatrix res(m.rows(), m.columns());
         for(size_t i = 0; i < m.rows(); ++i)
@@ -139,7 +139,7 @@ namespace ff
         }
         return res;
     }
-    FMatrix bitWiseLog(const FMatrix & m)
+    FMatrix bitWiseLog(const FMatrix& m)
     {
 	FMatrix res(m.rows(), m.columns());
         for(size_t i = 0; i < m.rows(); ++i)
@@ -151,7 +151,7 @@ namespace ff
         }
         return res;
     }
-    FMatrix repmat(const FMatrix & m, int rowX, int columnX)
+    FMatrix repmat(const FMatrix& m, const int rowX, const int columnX)
     {
 	FMatrix res(m.rows() * rowX, m.columns() * columnX);
 	for(size_t i = 0; i < rowX; ++i)
@@ -164,4 +164,4 @@ namespace ff
 	return res;
     }
     
-};//end namespace ff      
+}//end namespace ff      

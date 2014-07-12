@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FFDL_DSOURCE_DIVIDE_H_
+#define FFDL_DSOURCE_DIVIDE_H_
 
 #include "dsource/read.h"
 #include "utils/matlib.h"
@@ -8,10 +9,12 @@
 #include <matio.h>
 
 namespace ff{
-//   FMatrix_ptr read_train_x(std::string input_file);
-//   bool write_to_file(std::string output_file,FMatrix_ptr train_x);
-  FMatrix_ptr read_matrix_from_file(std::string file_name);
-  FMatrix_ptr read_matrix_from_dir(std::string dir);  
-  bool divide_into_files(int parts,std::string input_file = "../data/mnist_uint8.mat",std::string output_dir = ".");
+  FMatrix_ptr read_matrix_from_file(const std::string&  file_name);
+  FMatrix_ptr read_matrix_from_dir(const std::string&  dir);  
+  bool divide_into_files(const int parts,
+			 const std::string&  input_file = "../data/mnist_uint8.mat",
+			 const std::string&  output_dir = ".");
   
-};//end namespace ff
+}//end namespace ff
+
+#endif

@@ -1,6 +1,5 @@
 #include "file_send.h"
 
-using namespace std;
 
 namespace ff{
 
@@ -8,15 +7,15 @@ namespace ff{
    DLL, you MUST also provide a read callback with CURLOPT_READFUNCTION.
    Failing to do so will give you a crash since a DLL may not use the
    variable's memory when passed in to it from an app like this. */
-static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
+static size_t read_callback(void* ptr, const size_t size, const size_t nmemb, void* stream)
 {
   curl_off_t nread;
-  ifstream * file_ptr = static_cast<ifstream *>(stream);
+  std::ifstream* file_ptr = static_cast<std::ifstream*>(stream);
   /* in real-world cases, this would probably get this data differently
      as this fread() stuff is exactly what the library already would do
      by default internally */
-  file_ptr->read(static_cast<char *>(ptr),size * nmemb);
-//   size_t retcode = fread(ptr, size, nmemb, (FILE *)stream);
+  file_ptr->read(static_cast<char*>(ptr),size* nmemb);
+//   size_t retcode = fread(ptr, size, nmemb, (FILE*)stream);
   size_t retcode = file_ptr->gcount();
   
   nread = (curl_off_t)retcode;
@@ -26,18 +25,16 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-inline string getFileNameFromPath(string path)
+bool file_send(const std::string& input_file, 
+	       const std::string& ip, 
+	       const std::string& path, 
+	       std::string output_file)
 {
-  int start = path.find_last_of('/') + 1;
-  return path.substr(start,path.length() - start);
-}
-
-bool file_send(string input_file, string ip, string pwd, string output_file)
-{
-  CURL *curl;
+  CURL* curl;
   CURLcode res;  
   curl_off_t fsize;  
-  ifstream src_file(input_file.c_str(), ios::binary|ios::ate);
+  std::string outputPath = path;
+  std::ifstream src_file(input_file.c_str(), std::ios::binary|std::ios::ate);
 
   /* get the file size of the local file */
   if(!src_file.is_open()){
@@ -48,11 +45,11 @@ bool file_send(string input_file, string ip, string pwd, string output_file)
   if(output_file == "")
     output_file = getFileNameFromPath(input_file);
   
-  if(pwd.find_last_of("/") != pwd.size() - 1){
-    pwd += "/";
-//     std::cout << "pwd = " << pwd << std::endl;
+  if(path.find_last_of("/") != path.size() - 1){
+    outputPath += "/";
+//     std::cout << "path = " << path << std::endl;
   }
-  string remote_url = "scp://" + ip + pwd + output_file;
+  std::string remote_url = "scp://" + ip + outputPath + output_file;
   
   std::cout << "remote_url = " << remote_url << std::endl;
   
@@ -60,7 +57,7 @@ bool file_send(string input_file, string ip, string pwd, string output_file)
   
   fsize = (curl_off_t)src_file.tellg();
   
-  src_file.seekg (0, ios::beg);
+  src_file.seekg (0, std::ios::beg);
 
   std::cout << "Local file size: " << fsize << " bytes." << std::endl;
 
@@ -122,6 +119,36 @@ bool file_send(string input_file, string ip, string pwd, string output_file)
 
   curl_global_cleanup();
   return ret;
+}
+
+bool send_data_from_dir(const std::string& input_dir, const std::string& ip, const std::string& path)//only read one .part file
+{
+    std::string file_name;
+    bool retVal = false;
+    DIR* dirp;
+    struct dirent* direntp;
+    dirp = opendir(input_dir.c_str());
+    if(dirp != NULL) {
+        while((direntp = readdir(dirp)) != NULL) {
+            file_name = direntp->d_name;
+            std::cout << "file_name = " << file_name << std::endl;
+            int dotIndex = file_name.find_last_of('.');
+            if(dotIndex != std::string::npos && file_name.substr(dotIndex,file_name.length() - dotIndex) == ".part")
+            {
+                std::cout << "find input_file " << file_name << std::endl;
+                file_name = input_dir + "/" + file_name;
+                retVal = true;
+                break;
+            }
+        }
+        closedir(dirp);
+        if(file_send(file_name,ip,path))//send file and delete the local version
+        {
+            remove(file_name.c_str());
+            std::cout << "Remove file '" << file_name << "'" << std::endl;
+        }
+    }
+    return retVal;
 }
 
 }//end namespace ff

@@ -1,9 +1,7 @@
-#pragma once
+#ifndef FFDL_DTYPE_TYPE_H_
+#define FFDL_DTYPE_TYPE_H_
 
 #include <blaze/Math.h>
-// #include <blaze/math/DenseRow.h>
-// #include <blaze/math/DenseColumn.h>
-// #include <blaze/math/DenseSubmatrix.h>
 #include <memory>
 
 namespace ff
@@ -26,4 +24,6 @@ namespace ff
       struct matrix_type{
         typedef typename std::conditional<is_matrix<T1>::value, T1, T2>::type type;
       };//end struct matrix_type
-};//end namespace ff
+}//end namespace ff
+
+#endif

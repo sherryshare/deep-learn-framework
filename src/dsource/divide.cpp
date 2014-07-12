@@ -2,7 +2,7 @@
 
 namespace ff {
 
-static FMatrix_ptr read_train_x(std::string input_file)
+static FMatrix_ptr read_train_x(const std::string& input_file)
 {
     FMatrix_ptr res = nullptr;
     mat_t *mat = nullptr;
@@ -29,7 +29,7 @@ static FMatrix_ptr read_train_x(std::string input_file)
     return res;
 }
 
-static bool write_to_file(std::string output_file,FMatrix_ptr train_x)
+static bool write_to_file(const std::string& output_file,const FMatrix_ptr& train_x)
 {
     std::ofstream out_file(output_file.c_str());
     if(!out_file.is_open()) {
@@ -40,8 +40,8 @@ static bool write_to_file(std::string output_file,FMatrix_ptr train_x)
 	std::cout << "write file: " << output_file << std::endl;
 // 	out_file << train_x->rows() << " " << train_x->columns() << std::endl;//real command
 	out_file << "20" << " " << train_x->columns() << std::endl;//for quick test
-//         for(int r = 0; r < train_x->rows(); r++)//real command
-	for(int r = 0; r < train_x->rows() && r < 20; r++)//for quick test
+//         for(int r = 0; r < train_x->rows(); ++r)//real command
+	for(int r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
 	{
 	  out_file << row(*train_x,r);	  
 	}
@@ -49,7 +49,7 @@ static bool write_to_file(std::string output_file,FMatrix_ptr train_x)
     out_file.close();
 }
 
-FMatrix_ptr read_matrix_from_file(std::string file_name)
+FMatrix_ptr read_matrix_from_file(const std::string& file_name)
 {
     FMatrix_ptr res = nullptr;
     std::ifstream read_file(file_name.c_str());
@@ -67,10 +67,10 @@ FMatrix_ptr read_matrix_from_file(std::string file_name)
     ss >> columns;
     std::cout << "read matrix: " << rows << "," << columns << std::endl;
     res = std::make_shared<FMatrix>(FMatrix(rows,columns));
-    for(int i = 0; i < rows && read_file.good(); i++) {
+    for(int i = 0; i < rows && read_file.good(); ++i) {
         getline(read_file,line);
         std::stringstream ss(line);
-	for(int j = 0; j < columns; j++)
+	for(int j = 0; j < columns; ++j)
 	{
 	    ss >> res->operator()(i, j);
 	}        
@@ -78,7 +78,7 @@ FMatrix_ptr read_matrix_from_file(std::string file_name)
     return res;
 }
 
-FMatrix_ptr read_matrix_from_dir(std::string dir)//only read one .part file
+FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part file
 {
     FMatrix_ptr res = nullptr;
     std::string file_name;
@@ -103,7 +103,7 @@ FMatrix_ptr read_matrix_from_dir(std::string dir)//only read one .part file
     return res;
 }
 
-bool divide_into_files(int parts,std::string input_file,std::string output_dir)
+bool divide_into_files(const int parts, const std::string& input_file, const std::string& output_dir)
 {
     FMatrix_ptr train_x = read_train_x(input_file);
     if(train_x == nullptr)
@@ -115,7 +115,7 @@ bool divide_into_files(int parts,std::string input_file,std::string output_dir)
     int baseSize = train_x->rows() / parts;
     std::vector<FMatrix_ptr> train_x_pvec;
     std::cout << "Divide inputs:";
-    for(int i = 0; i < parts; i++)
+    for(int i = 0; i < parts; ++i)
     {
         std::cout << " " << i;
         int curSize = baseSize;
@@ -127,7 +127,7 @@ bool divide_into_files(int parts,std::string input_file,std::string output_dir)
         train_x_pvec.push_back(std::make_shared<FMatrix>(para_x));
     }
     std::cout << std::endl;
-    for(int i = 0; i < parts; i++)
+    for(int i = 0; i < parts; ++i)
     {
 	std::stringstream ss;
 	ss << output_dir << "/train_x_" << i << ".part";
@@ -136,4 +136,4 @@ bool divide_into_files(int parts,std::string input_file,std::string output_dir)
     }
     return retVal;
 }
-};//end namespace ff
+}//end namespace ff

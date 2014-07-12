@@ -1,4 +1,6 @@
-#pragma once
+#ifndef FFDL_UTILS_UTILS_H_
+#define FFDL_UTILS_UTILS_H_
+
 #include <network.h>
 #include <sstream>
 #include "common/common.h"
@@ -6,27 +8,24 @@
 #include <functional>
 #include <dlfcn.h>//dymanic library
 
-#define GLOBALFILENAME "globalFiles"
+// #define GLOBALFILENAME "globalFiles"
 
+
+
+namespace ff{
+  
+const std::string globalDirStr = "globalFiles";
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
 
-namespace ff{
+int count_elapse_microsecond(const std::function<void ()>& f);
+int count_elapse_second(const std::function<void ()>& f);
 
-int count_elapse_microsecond(const std::function<void ()> & f);
-int count_elapse_second(const std::function<void ()> & f);
-
-
-
-// inline void * openLibrary(std::string libStr);
-// inline void closeLibrary(void * handle);
-// inline std::string newDirAtCWD(std::string newFileName,std::string backUpPath = "");
-
-inline void * openLibrary(std::string libStr)
+inline void* openLibrary(const std::string & libStr)
 {
     // open the library
     std::cout << "Opening " << libStr << "..." << std::endl;
-    void * handle = dlopen(libStr.c_str(), RTLD_LAZY);
+    void* handle = dlopen(libStr.c_str(), RTLD_LAZY);
     if (!handle) {
         std::cerr << "Cannot open library: " << dlerror() << std::endl;
         return nullptr;
@@ -34,7 +33,7 @@ inline void * openLibrary(std::string libStr)
     return handle;
 }
 
-inline void closeLibrary(void * handle)
+inline void closeLibrary(void* handle)
 {
     // close the library
     std::cout << "Closing library..." << std::endl;
@@ -42,7 +41,7 @@ inline void closeLibrary(void * handle)
     handle = nullptr;//necessary?
 }
 
-inline std::string newDirAtCWD(std::string newFileName, std::string backUpPath = "")
+inline std::string newDirAtCWD(const std::string & newFileName, const std::string & backUpPath = "")
 {
     std::string output_dir;
     if((output_dir = getcwd(NULL,0)) == "") {
@@ -58,4 +57,6 @@ inline std::string newDirAtCWD(std::string newFileName, std::string backUpPath =
     }
     return output_dir;
 }
-};//end namespace ff
+}//end namespace ff
+
+#endif

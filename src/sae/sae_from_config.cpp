@@ -1,7 +1,7 @@
 #include "sae/sae_from_config.h"
 
 namespace ff {
-SAE_ptr SAE_create(NervureConfigurePtr const pnc)
+SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
 {
     srand(time(NULL));
     std::string activationFunction = pnc->get<std::string>("init.activation-function");
@@ -20,7 +20,7 @@ SAE_ptr SAE_create(NervureConfigurePtr const pnc)
     }
     
     Arch_t c(structure.size());
-    for(size_t i = 0; i < structure.size(); ++ i)
+    for(size_t i = 0; i < structure.size(); ++i)
     {
       c[i] = structure[i];
     }
@@ -34,7 +34,7 @@ SAE_ptr SAE_create(NervureConfigurePtr const pnc)
 }
 
 
-bool SAE_run(SAE_ptr const psae,std::string data_dir, NervureConfigurePtr const pnc)
+bool SAE_run(const SAE_ptr& psae,const std::string& data_dir, const NervureConfigurePtr& pnc)
 {
 //     if(!psae)
 //       return false;
@@ -50,7 +50,7 @@ bool SAE_run(SAE_ptr const psae,std::string data_dir, NervureConfigurePtr const 
     return true;
 }
 
-void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
+void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
 {
 //     if(!psae)
 //       return;
@@ -81,7 +81,7 @@ void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
       structure.push_back(i);
     }  
     Arch_t cn(structure.size());
-    for(size_t i = 0; i < structure.size(); ++ i)
+    for(size_t i = 0; i < structure.size(); ++i)
     {
       cn[i] = structure[i];
     }
@@ -95,7 +95,7 @@ void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
     std::vector<FMatrix_ptr> & m_oWs = nn.get_m_oWs();
     std::vector<FMatrix_ptr> & m_oVWs = nn.get_m_oVWs();
     std::vector<FMatrix_ptr> & m_oPs = nn.get_m_oPs();
-    for(int j = 0; j < m_oWs.size(); j++) {
+    for(int j = 0; j < m_oWs.size(); ++j) {
         std::cout << "W[" << j << "] = {" << m_oWs[j]->rows() << ", " << m_oWs[j]->columns() << "}" << std::endl;
         if(!m_oVWs.empty())
             std::cout << "vW[" << j << "] = {" << m_oVWs[j]->rows() << ", " << m_oVWs[j]->columns() << "}" << std::endl;
@@ -103,7 +103,7 @@ void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
             std::cout << "P[" << j << "] = {" << m_oPs[j]->rows() << ", " << m_oPs[j]->columns() << "}" << std::endl;
     }
 
-    for(int i = 0; i < m_oWs.size() - 1; i++)
+    for(int i = 0; i < m_oWs.size() - 1; ++i)
     {
 	if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
 	  m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
@@ -124,4 +124,4 @@ void train_NN(SAE_ptr const psae, NervureConfigurePtr const pnc)
 }
 
 
-};//end namespace ff
+}//end namespace ff

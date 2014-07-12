@@ -1,7 +1,9 @@
 /*
  * This shall be header file for SAE
  */
-#pragma once
+#ifndef FFDL_SAE_SAE_H_
+#define FFDL_SAE_SAE_H_
+
 #include "common/common.h"
 #include "nn/fbnn.h"
 
@@ -12,16 +14,22 @@ namespace ff
   class SAE
   {
     public:
-        SAE(const Arch_t & arch,std::string activationFunction = "sigm", double learningRate = 1, double inputZeroMaskedFraction = 0.5);
-        void    SAETrain(const FMatrix & train_x, const Opts & opts, const SAE_ptr & pSAE = nullptr);
-	std::vector<FBNN_ptr> & get_m_oAEs(void){return m_oAEs;};
+        SAE(const Arch_t& arch,
+	    const std::string& activationFunction = "sigm", 
+	    const double learningRate = 1, 
+	    const double inputZeroMaskedFraction = 0.5);
+        void    SAETrain(const FMatrix& train_x, 
+			 const Opts& opts, 
+			 const SAE_ptr& pSAE = nullptr);
+	std::vector<FBNN_ptr>& get_m_oAEs(void) {return m_oAEs;};
 
     protected:
         std::vector<FBNN_ptr>        m_oAEs;
-        std::string    m_strActivationFunction;
+        const std::string    m_strActivationFunction;
         double          m_fLearningRate;
-        double          m_fInputZeroMaskedFraction;
+        const double          m_fInputZeroMaskedFraction;
   };//end class SAE
   
-};//end namespace ff
+}//end namespace ff
 
+#endif

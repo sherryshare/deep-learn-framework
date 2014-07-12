@@ -3,10 +3,11 @@
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
 
+using namespace ff;
 //! This is global thing!
 class RMMaster{
 public:
-    RMMaster(ffnet::NetNervureFromFile & nnff)
+    RMMaster(ffnet::NetNervureFromFile& nnff)
         : m_oNNFF(nnff){}
     typedef std::map<std::string, slave_point_spt>    slave_points_t;
 
@@ -47,10 +48,10 @@ public:
 
 protected:
     slave_points_t      m_oSlavePoints;
-    ffnet::NetNervureFromFile &     m_oNNFF;
+    ffnet::NetNervureFromFile&     m_oNNFF;
 };
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "rm_master.log");
 

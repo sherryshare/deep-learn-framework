@@ -2,7 +2,10 @@
 
 namespace ff
 {
-  SAE::SAE(const Arch_t & arch,std::string activationFunction, double learningRate, double inputZeroMaskedFraction)
+  SAE::SAE(const Arch_t& arch,
+	   const std::string& activationFunction, 
+	   const double learningRate, 
+	   const double inputZeroMaskedFraction)
       : m_strActivationFunction(activationFunction)
       , m_fLearningRate(learningRate)
       , m_fInputZeroMaskedFraction(inputZeroMaskedFraction)
@@ -19,7 +22,7 @@ namespace ff
       std::cout << "Finish initialize!" << std::endl;
   }
 
-  void SAE::SAETrain(const FMatrix & train_x, const Opts & opts, const SAE_ptr & pSAE)
+  void SAE::SAETrain(const FMatrix& train_x, const Opts& opts, const SAE_ptr& pSAE)
   {
       std::cout << "Start training SAE." << std::endl;
       size_t num_ae = m_oAEs.size();

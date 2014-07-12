@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 #include <cassert>
 
+namespace ff{
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP)
 {
     std::stringstream ss;
@@ -22,7 +23,7 @@ std::string local_ip_v4()
 
         while(it!=tcp::resolver::iterator())
         {
-            boost::asio::ip::address addr=(it++)->endpoint().address();
+            boost::asio::ip::address addr=(++it)->endpoint().address();
             if(addr.is_v6())
             {
 //                std::cout<<"ipv6 address: ";
@@ -31,7 +32,7 @@ std::string local_ip_v4()
                 return addr.to_string();
         }
     }
-    catch(std::exception &e)
+    catch(std::exception& e)
     {
         std::cout<<e.what()<<std::endl;
     }
@@ -40,8 +41,8 @@ std::string local_ip_v4()
     return "";
 }
 
-namespace ff{
-int count_elapse_microsecond(const std::function<void ()> & f)
+
+int count_elapse_microsecond(const std::function<void ()>& f)
 {
     using namespace std::chrono;
 
@@ -53,7 +54,7 @@ int count_elapse_microsecond(const std::function<void ()> & f)
     return duration_cast<microseconds>(end-start).count();
 }
 
-int count_elapse_second(const std::function<void ()> & f)
+int count_elapse_second(const std::function<void ()>& f)
 {
     using namespace std::chrono;
 
@@ -64,4 +65,4 @@ int count_elapse_second(const std::function<void ()> & f)
     end = system_clock::now();
     return duration_cast<seconds>(end-start).count();
 }
-};//end namespace ff
+}//end namespace ff

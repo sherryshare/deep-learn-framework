@@ -1,26 +1,29 @@
 /*
  * This shall be header file for mathmatic
  */
-#pragma once
+#ifndef FFDL_UTILS_MATH_H_
+#define FFDL_UTILS_MATH_H_
 
 #include "matlib.h"
 
 namespace ff{
-    double sigm(const double & x);
+    double sigm(const double& x);
     
-    FMatrix sigm(const FMatrix & m);
+    FMatrix sigm(const FMatrix& m);
     
-    double sigmrnd(const double & x);
+    double sigmrnd(const double& x);
     
-    FMatrix sigmrnd(const FMatrix & m);
+    FMatrix sigmrnd(const FMatrix& m);
     
-    void softmax(double * x, int n_out);
+    void softmax(double* x, const int n_out);
     
-    FMatrix softmax(const FMatrix & m);
+    FMatrix softmax(const FMatrix& m);
     
-    double tanh_opt(const double & x);
+    double tanh_opt(const double& x);
     
-    FMatrix tanh_opt(const FMatrix & m);
+    FMatrix tanh_opt(const FMatrix& m);
 }//end namespace ff
+
+#endif
 
 

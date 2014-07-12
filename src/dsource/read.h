@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FFDL_DSOURCE_READ_H_
+#define FFDL_DSOURCE_READ_H_
 
 #include "common/common.h"
 #include "dtype/type.h"
@@ -17,6 +18,8 @@ namespace ff
         FMatrix_ptr test_x;
         FMatrix_ptr test_y;
   };//end struct TData
-  FMatrix_ptr read_matrix_in_mat(mat_t * mat, const char *varname);
-  TData read_data(std::string input_file = "../data/mnist_uint8.mat");
-}//end namespace ff;
+  FMatrix_ptr read_matrix_in_mat(mat_t* mat, const char* varname);
+  TData read_data(const std::string& input_file = "../data/mnist_uint8.mat");
+}//end namespace ff
+
+#endif

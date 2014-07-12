@@ -4,19 +4,17 @@
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
 #include "pkgs/file_send.h"
-#include "pkgs/sae_handles.h"
 #include "dsource/divide.h"
-#include "sae/sae.h"
 #include "sae/sae_from_config.h"
 
 using namespace ff;
 class DLMaster {
 
 public:
-    DLMaster(ffnet::NetNervureFromFile & nnff, std::string sae_config_file, std::string fbnn_config_file)
-        : m_oNNFF(nnff), SdAEConfigFileStr(sae_config_file), FBNNConfigFileStr(fbnn_config_file) {}
+    DLMaster(ffnet::NetNervureFromFile& nnff, const std::string& sae_config_file, const std::string& fbnn_config_file)
+        : m_oNNFF(nnff), m_str_sae_configfile(sae_config_file), m_str_fbnn_ConfigFile(fbnn_config_file) {}
 
-    void    onConnSucc(ffnet::TCPConnectionBase *pConn)
+    void    onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
         auto it = pConn->getRemoteEndpointPtr();
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
@@ -48,7 +46,7 @@ public:
 
     void onRecvAck(boost::shared_ptr<AckNodeMsg> pMsg, ffnet::EndpointPtr_t pEP)
     {
-        const std::vector<slave_point_spt> & points = pMsg->all_slave_points();
+        const std::vector<slave_point_spt>& points = pMsg->all_slave_points();
 
         for(size_t i = 0; i < points.size(); ++i)
         {
@@ -66,50 +64,50 @@ public:
         //Depart data into pieces based on slave number.
         //make the output dir
         std::string output_dir;
-        if((output_dir = newDirAtCWD(GLOBALFILENAME)) == "")
+        if((output_dir = newDirAtCWD(globalDirStr)) == "")
         {
             std::cout << "Error when make output dir!" << std::endl;
             return;
         }
         std::cout << "output DIR = " << output_dir << std::endl;
 
-        pSAE_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
-        divide_into_files(m_oSlaves.size(),pSAE_nc->get<std::string>("path.input-file"),output_dir.c_str());
-        psae = SAE_create(pSAE_nc);
-        SAE_run(psae,output_dir,pSAE_nc);
-        pFFNN_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-        train_NN(psae,pFFNN_nc);
+        m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
+        divide_into_files(m_oSlaves.size(),m_p_sae_nc->get<std::string>("path.input-file"),output_dir.c_str());
+        m_p_sae = SAE_create(m_p_sae_nc);
+        SAE_run(m_p_sae,output_dir,m_p_sae_nc);
+        m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+        train_NN(m_p_sae,m_p_fbnn_nc);
     }
 
 
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
-        std::string & slave_path = pMsg->dir();
+        std::string& slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         //Send file here!
-	file_send(SdAEConfigFileStr,pEP->address().to_string(),slave_path);
+	file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
-        send_data_from_dir(static_cast<std::string>("./") + GLOBALFILENAME,pEP->address().to_string(),slave_path);
+        send_data_from_dir(static_cast<std::string>("./") + globalDirStr,pEP->address().to_string(),slave_path);
 
 
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
     }
 
 protected:
-    ffnet::NetNervureFromFile &     m_oNNFF;
+    ffnet::NetNervureFromFile&     m_oNNFF;
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
-    std::string SdAEConfigFileStr;
-    std::string FBNNConfigFileStr;
-    ff::SAE_ptr psae;
-    NervureConfigurePtr pSAE_nc;
-    NervureConfigurePtr pFFNN_nc;
+    std::string m_str_sae_configfile;
+    std::string m_str_fbnn_ConfigFile;
+    ff::SAE_ptr m_p_sae;
+    NervureConfigurePtr m_p_sae_nc;
+    NervureConfigurePtr m_p_fbnn_nc;
     
-//     void * UDL_handle;
+//     void* UDL_handle;
 };
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
     //TODO(sherryshare) pass user defined library (UDL) as an argument!

@@ -21,7 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  * *************************************************/
-#pragma once
+#ifndef FFDL_COMMON_SCOPE_GUARD_H_
+#define FFDL_COMMON_SCOPE_GUARD_H_
 
 #include <functional>
 
@@ -41,4 +42,6 @@ class scope_guard {
  private:
   std::function<void(void)> f;
 };  // end class scope_guard
-};//end namespace ff
+}//end namespace ff
+
+#endif
