@@ -72,7 +72,7 @@ public:
         std::cout << "output DIR = " << output_dir << std::endl;
 
         m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
-        divide_into_files(m_oSlaves.size(),m_p_sae_nc->get<std::string>("path.input-file"),output_dir.c_str());
+        divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
         m_p_sae = SAE_create(m_p_sae_nc);
         SAE_run(m_p_sae,output_dir,m_p_sae_nc);
         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
@@ -110,17 +110,16 @@ protected:
 int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "dl_master.log");
-    //TODO(sherryshare) pass user defined library (UDL) as an argument!
     std::string sae_config_file = "../confs/apps/SdAE_train.ini";
     std::string fbnn_config_file = "../confs/apps/FFNN_train.ini";
-    if(argc > 1) {//UDL argc
+    if(argc > 1) {//sae_config_file argc
         std::stringstream ss_argv;
         ss_argv << argv[1];
         ss_argv >> sae_config_file;
     }
     std::cout << "sae config file = " << sae_config_file << std::endl;
 
-    if(argc > 2) {//data path argc
+    if(argc > 2) {//fbnn_config_file argc
         std::stringstream ss_argv;
         ss_argv << argv[1];
         ss_argv >> fbnn_config_file;

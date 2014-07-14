@@ -7,32 +7,32 @@ namespace ff
       return 1.0 * ::rand() / RAND_MAX ;
     }
 
-    FMatrix      rand(const int m, const int n)
+    FMatrix      rand(const int32_t m, const int32_t n)
     {
         FMatrix res(m, n);
-        for(int i = 0; i < m; ++i)
-          for(int j = 0; j < n; ++j)
+        for(size_t i = 0; i < m; ++i)
+          for(size_t j = 0; j < n; ++j)
           {
             res(i, j) = rand();
           }
         return res;
     }
 
-    void randperm(const int n, std::vector<int>& iVector)
+    void randperm(const int32_t n, std::vector<int32_t>& iVector)
     {
       iVector.clear();
-      for(int i = 0; i < n; ++i)
+      for(int32_t i = 0; i < n; ++i)
 	iVector.push_back(i);
       std::random_shuffle(iVector.begin(), iVector.end());
     }
 
-    FMatrix  zeros(const int m, const int n)
+    FMatrix  zeros(const int32_t m, const int32_t n)
     {
       FMatrix res(m, n, 0.0);
       return res;
     }
 
-    FMatrix     ones(const int m, const int n)
+    FMatrix     ones(const int32_t m, const int32_t n)
     {
       FMatrix res(m, n, 1.0);
       return res;
@@ -100,15 +100,15 @@ namespace ff
 	}
 	return res;
     }    
-    std::vector<int>	findUnequalIndexes(const FColumn& c, const FColumn& c1)//find unequal indexes in two columns
+    std::vector<int32_t>	findUnequalIndexes(const FColumn& c, const FColumn& c1)//find unequal indexes in two columns
     {
-      std::vector<int> res;
+      std::vector<int32_t> res;
       if(c.size() != c1.size()){
 	std::cout << "Warning: column sizes are different!\n" << std::endl;
 	res.push_back(-1);//insert -1 as wrong outputs.
 	return res;
       }
-      for(int i = 0; i < c.size(); ++i)
+      for(int32_t i = 0; i < c.size(); ++i)
       {
 	if(c[i] != c1[i])
 	  res.push_back(i);
@@ -151,7 +151,7 @@ namespace ff
         }
         return res;
     }
-    FMatrix repmat(const FMatrix& m, const int rowX, const int columnX)
+    FMatrix repmat(const FMatrix& m, const int32_t rowX, const int32_t columnX)
     {
 	FMatrix res(m.rows() * rowX, m.columns() * columnX);
 	for(size_t i = 0; i < rowX; ++i)

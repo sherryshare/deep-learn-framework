@@ -10,9 +10,9 @@ namespace ff
 
 double        rand(void);
 
-FMatrix      rand(const int m, const int n);
+FMatrix      rand(const int32_t m, const int32_t n);
 
-void randperm(const int n, std::vector<int>& iVector);
+void randperm(const int32_t n, std::vector<int32_t>& iVector);
 
 template<class T>
 size_t      numel(const T& t, typename std::enable_if<is_matrix<T>::value, void>::type* p = nullptr)
@@ -20,9 +20,9 @@ size_t      numel(const T& t, typename std::enable_if<is_matrix<T>::value, void>
     return t.rows() * t.columns();
 }
 
-FMatrix  zeros(const int m, const int n);
+FMatrix  zeros(const int32_t m, const int32_t n);
 
-FMatrix     ones(const int m, const int n);
+FMatrix     ones(const int32_t m, const int32_t n);
 
 ///TODO : performance issue here, we should use lazy evaluation here!
 template<class T>
@@ -162,7 +162,7 @@ FMatrix     columnMean(const FMatrix& m );
 
 FColumn     rowMaxIndexes(const FMatrix& m );
 
-std::vector<int>	findUnequalIndexes(const FColumn& c, const FColumn& c1);
+std::vector<int32_t>	findUnequalIndexes(const FColumn& c, const FColumn& c1);
 
 double     matrixSum(const FMatrix& m );
 
@@ -170,7 +170,7 @@ FMatrix bitWiseSquare(const FMatrix& m);
 
 FMatrix bitWiseLog(const FMatrix& m);
 
-FMatrix repmat(const FMatrix& m, const int rowX, const int columnX);
+FMatrix repmat(const FMatrix& m, const int32_t rowX, const int32_t columnX);
 
 };//end namespace ff
 template <class T>

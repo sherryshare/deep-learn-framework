@@ -40,8 +40,8 @@ static bool write_to_file(const std::string& output_file,const FMatrix_ptr& trai
 	std::cout << "write file: " << output_file << std::endl;
 // 	out_file << train_x->rows() << " " << train_x->columns() << std::endl;//real command
 	out_file << "20" << " " << train_x->columns() << std::endl;//for quick test
-//         for(int r = 0; r < train_x->rows(); ++r)//real command
-	for(int r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
+//         for(size_t r = 0; r < train_x->rows(); ++r)//real command
+	for(size_t r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
 	{
 	  out_file << row(*train_x,r);	  
 	}
@@ -60,17 +60,17 @@ FMatrix_ptr read_matrix_from_file(const std::string& file_name)
     }
     std::cout << "read file:" << file_name << std::endl;
     std::string line;
-    int rows,columns;
+    size_t rows,columns;
     getline(read_file,line);
     std::stringstream ss(line);
     ss >> rows;
     ss >> columns;
     std::cout << "read matrix: " << rows << "," << columns << std::endl;
     res = std::make_shared<FMatrix>(FMatrix(rows,columns));
-    for(int i = 0; i < rows && read_file.good(); ++i) {
+    for(size_t i = 0; i < rows && read_file.good(); ++i) {
         getline(read_file,line);
         std::stringstream ss(line);
-	for(int j = 0; j < columns; ++j)
+	for(size_t j = 0; j < columns; ++j)
 	{
 	    ss >> res->operator()(i, j);
 	}        

@@ -20,7 +20,7 @@ bool send_data_from_dir(const std::string& input_dir,
 
 inline std::string getFileNameFromPath(const std::string& path)
 {
-  int start = path.find_last_of('/') + 1;
+  int32_t start = path.find_last_of('/') + 1;
   return path.substr(start,path.length() - start);
 }
 

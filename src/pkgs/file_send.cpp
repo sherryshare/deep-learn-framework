@@ -132,7 +132,7 @@ bool send_data_from_dir(const std::string& input_dir, const std::string& ip, con
         while((direntp = readdir(dirp)) != NULL) {
             file_name = direntp->d_name;
             std::cout << "file_name = " << file_name << std::endl;
-            int dotIndex = file_name.find_last_of('.');
+            int32_t dotIndex = file_name.find_last_of('.');
             if(dotIndex != std::string::npos && file_name.substr(dotIndex,file_name.length() - dotIndex) == ".part")
             {
                 std::cout << "find input_file " << file_name << std::endl;

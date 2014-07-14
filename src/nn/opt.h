@@ -7,8 +7,8 @@ namespace ff
 {
   typedef struct 
   {
-    int numpochs;// = 1;
-    int batchsize;// = 100;
+    int32_t numpochs;// = 1;
+    int32_t batchsize;// = 100;
   } Opts;
 }//end namespace ff
 

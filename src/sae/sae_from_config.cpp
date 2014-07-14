@@ -4,63 +4,64 @@ namespace ff {
 SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
 {
     srand(time(NULL));
-    std::string activationFunction = pnc->get<std::string>("init.activation-function");
-    double learningRate = pnc->get<double>("init.learning-rate");
-    double inputZeroMaskedFraction = pnc->get<double>("init.input-zero-masked-fraction");
-    std::string saeStructureStr = pnc->get<std::string>("init.sae-structure");
-    
+    const std::string activationFunction = getActivationFunctionFromNervureConfigure(pnc);
+    const double learningRate = getLearningRateFromNervureConfigure(pnc);
+    const double inputZeroMaskedFraction = getInputZeroMaskedFractionFromNervureConfigure(pnc);
+
     std::cout << activationFunction << "\t" << learningRate << "\t" << inputZeroMaskedFraction << std::endl;
-    std::vector<int> structure;
-    std::stringstream ss;
-    ss << saeStructureStr;
-    int i;
-    while(ss >> i)
-    {
-      structure.push_back(i);
-    }
-    
-    Arch_t c(structure.size());
-    for(size_t i = 0; i < structure.size(); ++i)
-    {
-      c[i] = structure[i];
-    }
-    
+
+    Arch_t sae_arch;
+    getArchFromNervureConfigure(pnc,"sae",sae_arch);
+
     //train a 100 hidden unit SDAE and use it to initialize a FFNN
     //Setup and train a stacked denoising autoencoder (SDAE)
     std::cout << "Pretrain an SAE" << std::endl;
-    std::cout << "c = " << c << "numel(c) = " << numel(c) << std::endl;
-    SAE sae(c,activationFunction,learningRate,inputZeroMaskedFraction);
+    std::cout << "sae_arch = " << sae_arch << "numel(sae_arch) = " << numel(sae_arch) << std::endl;
+    SAE sae(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction);
     return std::make_shared<SAE>(sae);
 }
 
+void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
+                                 const std::string& structure_name,
+                                 Arch_t& arch) {
+    std::string structure_field = static_cast<std::string>("init.") + structure_name + "-structure";
+    std::string readStructureStr = pnc->get<std::string>(structure_field);
+    std::vector<unsigned long> structure;
+    std::stringstream ss;
+    ss << readStructureStr;
+    unsigned long ul_nodeNumber;
+    while(ss >> ul_nodeNumber)
+    {
+        structure.push_back(ul_nodeNumber);
+    }
+
+    arch.resize(structure.size());
+    for(size_t i = 0; i < structure.size(); ++i)
+    {
+        arch[i] = structure[i];
+    }
+}
 
 bool SAE_run(const SAE_ptr& psae,const std::string& data_dir, const NervureConfigurePtr& pnc)
 {
-//     if(!psae)
-//       return false;
     FMatrix_ptr train_x = read_matrix_from_dir(data_dir);
     if(train_x == nullptr)
         return false;
     *train_x = (*train_x) / 255;
     Opts opts;
-   opts.numpochs = pnc->get<int>("opt.num-epochs");
-    std::cout << "numpochs = " << opts.numpochs << std::endl;
-    opts.batchsize = pnc->get<int>("opt.batch-size");
+    getOptsFromNervureConfigure(pnc,opts);
     psae->SAETrain(*train_x,opts);
     return true;
 }
 
 void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
 {
-//     if(!psae)
-//       return;
-    std::string input_file = pnc->get<std::string>("path.input-file");
-    std::string activationFunction = pnc->get<std::string>("init.activation-function");
-    double learningRate = pnc->get<double>("init.learning-rate");
-    std::string nnStructureStr = pnc->get<std::string>("init.nn-structure");
+    const std::string input_file = getInputFileNameFromNervureConfigure(pnc);
+    const std::string activationFunction = getActivationFunctionFromNervureConfigure(pnc);
+    const double learningRate = getLearningRateFromNervureConfigure(pnc);
     TData d = read_data(input_file);
     if(d.train_x == nullptr || d.train_y == nullptr || d.test_x == nullptr || d.test_y == nullptr)
-      return;
+        return;
     *d.train_x = (*d.train_x) / 255;
     *d.test_x = (*d.test_x) / 255;
 
@@ -72,29 +73,16 @@ void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
 
 
     //Use the SDAE to initialize a FFNN
-    std::cout << "Train an FFNN" << std::endl;
-    std::vector<int> structure;
-    std::stringstream ss(nnStructureStr);
-    int i;
-    while(ss >> i)
-    {
-      structure.push_back(i);
-    }  
-    Arch_t cn(structure.size());
-    for(size_t i = 0; i < structure.size(); ++i)
-    {
-      cn[i] = structure[i];
-    }
-    std::cout << "cn = " << cn << "numel(cn) = " << numel(cn) << std::endl;
-    FBNN nn(cn,activationFunction,learningRate);
+    Arch_t nn_arch;
+    getArchFromNervureConfigure(pnc,"nn",nn_arch);
+    std::cout << "nn_arch = " << nn_arch << "numel(nn_arch) = " << numel(nn_arch) << std::endl;
+    FBNN nn(nn_arch,activationFunction,learningRate);
     Opts opts;
-    opts.numpochs = pnc->get<int>("opt.num-epochs");
-    std::cout << "numpochs = " << opts.numpochs << std::endl;
-    opts.batchsize = pnc->get<int>("opt.batch-size");
+    getOptsFromNervureConfigure(pnc,opts);
     //check if nn structure is correct
-    std::vector<FMatrix_ptr> & m_oWs = nn.get_m_oWs();
-    std::vector<FMatrix_ptr> & m_oVWs = nn.get_m_oVWs();
-    std::vector<FMatrix_ptr> & m_oPs = nn.get_m_oPs();
+    const std::vector<FMatrix_ptr> & m_oWs = nn.get_m_oWs();
+    const std::vector<FMatrix_ptr> & m_oVWs = nn.get_m_oVWs();
+    const std::vector<FMatrix_ptr> & m_oPs = nn.get_m_oPs();
     for(int j = 0; j < m_oWs.size(); ++j) {
         std::cout << "W[" << j << "] = {" << m_oWs[j]->rows() << ", " << m_oWs[j]->columns() << "}" << std::endl;
         if(!m_oVWs.empty())
@@ -105,13 +93,13 @@ void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
 
     for(int i = 0; i < m_oWs.size() - 1; ++i)
     {
-	if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
-	  m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
-	{
-	  std::cout << "FFNN structure doesn't match SAE structure! Train by default value from level " << i << "..." << std::endl;
-	  break;
-	}
-        *m_oWs[i] = *(psae->get_m_oAEs()[i]->get_m_oWs())[0];//nn.W{i} = sae.ae{i}.W{1};
+        if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
+                m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
+        {
+            std::cout << "FFNN structure doesn't match SAE structure! Train by default value from level " << i << "..." << std::endl;
+            break;
+        }
+        nn.set_m_oWs_column((psae->get_m_oAEs()[i]->get_m_oWs())[0],i);//nn.W{i} = sae.ae{i}.W{1};
     }
 
     //Train the FFNN

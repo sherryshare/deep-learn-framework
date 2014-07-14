@@ -25,29 +25,34 @@ namespace ff
     public:
       FBNN(const Arch_t& arch, 
 	   const std::string& activeStr = "tanh_opt", 
-	   const int learningRate = 2, const double zeroMaskedFraction = 0.0,
+	   const double learningRate = 2, const double zeroMaskedFraction = 0.0,
 	   const bool testing = false, const std::string& outputStr = "sigm");
       FBNN(const FBNN& p) = delete;
       FBNN& operator =(const FBNN& p) = delete;
       
-      std::vector<FMatrix_ptr>& get_m_oWs(void) {return m_oWs;};
-      std::vector<FMatrix_ptr>& get_m_oVWs(void) {return m_oVWs;};
-      std::vector<FMatrix_ptr>& get_m_oPs(void) {return m_oPs;};
-      std::vector<FMatrix_ptr>& get_m_oAs(void) {return m_oAs;};
-      std::vector<FMatrix_ptr>& get_m_odWs(void) {return m_odWs;};
+      const std::vector<FMatrix_ptr>& get_m_oWs(void) const {return m_oWs;};
+      const std::vector<FMatrix_ptr>& get_m_oVWs(void) const {return m_oVWs;};
+      const std::vector<FMatrix_ptr>& get_m_oPs(void) const {return m_oPs;};
+      const std::vector<FMatrix_ptr>& get_m_oAs(void) const {return m_oAs;};
+      const std::vector<FMatrix_ptr>& get_m_odWs(void) const {return m_odWs;};
       
       void set_m_oWs(const std::vector<FMatrix_ptr>& oWs){
-	for(int i = 0; i < oWs.size(); i++)
+	for(size_t i = 0; i < oWs.size(); i++)
 	  *m_oWs[i] = *oWs[i];	
       };
+      
+      void set_m_oWs_column(const FMatrix_ptr W_col, int32_t index){
+	  *m_oWs[index] = *W_col;	
+      };
+      
       void set_m_oVWs(const std::vector<FMatrix_ptr>& oVWs){
-	for(int i = 0; i < oVWs.size(); i++)
+	for(size_t i = 0; i < oVWs.size(); i++)
 	  *m_oVWs[i] = *oVWs[i];	  
       };      
       void set_m_odWs(const std::vector<FMatrix_ptr>& odWs){
 	if(m_odWs.empty())
 	{
-	  for(int i = 0; i < odWs.size(); i++)
+	  for(size_t i = 0; i < odWs.size(); i++)
 	  {
 	    FMatrix m(*odWs[i]);
 	    m_odWs.push_back(std::make_shared<FMatrix>(m));
@@ -55,7 +60,7 @@ namespace ff
 	}
 	else
 	{
-	  for(int i = 0; i < odWs.size(); i++)
+	  for(size_t i = 0; i < odWs.size(); i++)
 	  {
 	    *m_oWs[i] = *odWs[i];	
 	  }
@@ -91,10 +96,9 @@ namespace ff
       protected:
         
       const Arch_t&    m_oArch;
-      int         m_iN;
+      int32_t         m_iN;
       const std::string       m_strActivationFunction;
-      int         m_iLearningRate;//shall be changed during train()
-//       static constexpr int         m_iLearningRate=2;
+      double         m_fLearningRate;//shall be changed during train()
       static const double      m_fMomentum;
       static const double      m_fScalingLearningRate;
       static const double      m_fWeithtPenaltyL2;

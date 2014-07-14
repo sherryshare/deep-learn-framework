@@ -3,12 +3,13 @@
 
 #include <blaze/Math.h>
 #include <memory>
+// #include <common.h>
 
 namespace ff
 {
   typedef blaze::DynamicMatrix<double, blaze::rowMajor> FMatrix;
   typedef std::shared_ptr<FMatrix> FMatrix_ptr;
-  typedef blaze::DynamicVector<int, blaze::columnVector> FColumn;
+  typedef blaze::DynamicVector<int32_t, blaze::columnVector> FColumn;
   
   template <class T>
   struct is_matrix{const static bool value=false;};
