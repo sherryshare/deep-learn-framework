@@ -10,6 +10,11 @@ public:
     RMMaster(ffnet::NetNervureFromFile& nnff)
         : m_oNNFF(nnff){}
     typedef std::map<std::string, slave_point_spt>    slave_points_t;
+    
+    void stop(){
+      if(!m_oSlavePoints.empty())
+	m_oSlavePoints.clear();
+    }
 
     void onLostTCPConnection(ffnet::EndpointPtr_t pEP)
     {
@@ -51,6 +56,15 @@ protected:
     ffnet::NetNervureFromFile&     m_oNNFF;
 };
 
+void  press_and_stop(ffnet::NetNervureFromFile& nnff, RMMaster& master)
+{
+    std::cout<<"Press any key to quit..."<<std::endl;
+    getc(stdin);
+    master.stop();
+    nnff.stop();
+    std::cout<<"Stopping, please wait..."<<std::endl;
+}
+
 int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "rm_master.log");
@@ -62,6 +76,9 @@ int main(int argc, char* argv[])
     nnff.addNeedToRecvPkg<ReqNodeMsg>(boost::bind(&RMMaster::onRecvReqNode, &master, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_lost_connection>::listen(&nnff, boost::bind(&RMMaster::onLostTCPConnection, &master, _1));
 
+    boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff), boost::ref(master)));
+    
     nnff.run();
+    monitor_thrd.join();
     return 0;
 }

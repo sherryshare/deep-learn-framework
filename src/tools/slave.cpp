@@ -81,6 +81,7 @@ public:
     void onRecvCmdStartReq(boost::shared_ptr<CmdStartReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         //TODO(sherryshare)Start the program here!
+	std::cout << "Receive start cmd message!" << pMsg->cmd() << std::endl;
     }
 
 protected:

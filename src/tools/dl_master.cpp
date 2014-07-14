@@ -12,8 +12,10 @@ class DLMaster {
 
 public:
     DLMaster(ffnet::NetNervureFromFile& nnff, const std::string& sae_config_file, const std::string& fbnn_config_file)
-        : m_oNNFF(nnff), m_str_sae_configfile(sae_config_file), m_str_fbnn_ConfigFile(fbnn_config_file) {}
-
+        : m_oNNFF(nnff), 
+        m_str_sae_configfile(sae_config_file),
+        m_str_fbnn_ConfigFile(fbnn_config_file) {}
+    
     void    onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
         auto it = pConn->getRemoteEndpointPtr();
@@ -37,12 +39,14 @@ public:
                 {
                     m_oNNFF.send(reqmsg, it);
                     std::cout << "send request message to " << it->address() << std::endl;
+//                     boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
+// 		    startMsg->cmd() = "haha!";
+//                     std::cout << "send start Cmd Message onConnSucc!" << std::endl;
+//                     m_oNNFF.send(startMsg, it);
                 }
             }
         }
     }
-
-
 
     void onRecvAck(boost::shared_ptr<AckNodeMsg> pMsg, ffnet::EndpointPtr_t pEP)
     {
@@ -74,25 +78,24 @@ public:
         m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
         m_p_sae = SAE_create(m_p_sae_nc);
-        SAE_run(m_p_sae,output_dir,m_p_sae_nc);
-        m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-        train_NN(m_p_sae,m_p_fbnn_nc);
+//         SAE_run(m_p_sae,output_dir,m_p_sae_nc);//run an sae
+//         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+//         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
     }
-
-
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::string& slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
-        //Send file here!
-	file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);
+        file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
         std::cout<<"path on slave "<<slave_path<<std::endl;
-        //TODO(sherryshare) using dlopen to open user defined library (UDL), and dlsym to init paramater server!
+        //Send divided inputs
         send_data_from_dir(static_cast<std::string>("./") + globalDirStr,pEP->address().to_string(),slave_path);
-
-
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
+        boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
+	startMsg->cmd() = "haha!";
+        std::cout << "send start Cmd Message!" << std::endl;
+        m_oNNFF.send(startMsg, pEP);
     }
 
 protected:
@@ -103,9 +106,15 @@ protected:
     ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
     NervureConfigurePtr m_p_fbnn_nc;
-    
-//     void* UDL_handle;
 };
+
+void  press_and_stop(ffnet::NetNervureFromFile& nnff)
+{
+    std::cout<<"Press any key to quit..."<<std::endl;
+    getc(stdin);
+    nnff.stop();
+    std::cout<<"Stopping, please wait..."<<std::endl;
+}
 
 int main(int argc, char* argv[])
 {
@@ -133,6 +142,9 @@ int main(int argc, char* argv[])
     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLMaster::onRecvSendFileDirAck, &master, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
+    boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
+    
     nnff.run();
+    monitor_thrd.join();
     return 0;
 }
