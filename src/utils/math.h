@@ -24,12 +24,12 @@ namespace ff{
     FMatrix tanh_opt(const FMatrix& m);
     
     inline bool double_equals_zero(double d){
-//       return (d - 0.0 < 1e-6) || (d - 0.0) > -1e-6;
-      return fabs(d) < 1e-6;
+//       return (d - 0.0 <= 1e-6) || (d - 0.0) >= -1e-6;
+      return fabs(d) <= 1e-6;
     }
     
     inline bool double_larger_than_zero(double d){
-      return d - 0.0 >= 1e-6;
+      return d - 0.0 > 1e-6;
     }
     
 }//end namespace ff

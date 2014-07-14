@@ -40,19 +40,19 @@ target_link_libraries(ffdl_s matio blaze boost_system boost_date_time boost_thre
 SET_TARGET_PROPERTIES(ffdl_s PROPERTIES OUTPUT_NAME "ffdl")
 
 add_executable(t_divide src/tools/test_divide.cpp)
-target_link_libraries(t_divide curl dl ffdl matio blaze)
+target_link_libraries(t_divide curl ffdl matio blaze)
 
 add_executable(dl_master src/tools/dl_master.cpp)
-target_link_libraries(dl_master curl dl ffdl matio blaze network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(dl_master curl ffdl matio blaze network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(dl_worker src/tools/dl_worker.cpp)
-target_link_libraries(dl_worker curl dl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(dl_worker curl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(rm_master src/tools/rm_master.cpp)
-target_link_libraries(rm_master curl dl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(rm_master curl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(slave src/tools/slave.cpp)
-target_link_libraries(slave curl dl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(slave curl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
 
 add_executable(test_file_send src/tools/test_file_send.cpp)
-target_link_libraries(test_file_send curl dl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
+target_link_libraries(test_file_send curl ffdl network boost_thread boost_date_time boost_system boost_serialization pthread)
