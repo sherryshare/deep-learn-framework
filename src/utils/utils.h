@@ -4,8 +4,8 @@
 #include <network.h>
 #include <sstream>
 #include "common/common.h"
-#include <chrono>
-#include <functional>
+//#include <chrono>
+//#include <functional>
 // #include <dlfcn.h>//dymanic library
 
 // #define GLOBALFILENAME "globalFiles"
@@ -18,8 +18,8 @@ const std::string globalDirStr = "globalFiles";
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
 
-int32_t count_elapse_microsecond(const std::function<void ()>& f);
-int32_t count_elapse_second(const std::function<void ()>& f);
+//int32_t count_elapse_microsecond(const std::function<void ()>& f);
+//int32_t count_elapse_second(const std::function<void ()>& f);
 
 // inline void* openLibrary(const std::string & libStr)
 // {

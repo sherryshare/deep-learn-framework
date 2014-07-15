@@ -1,4 +1,5 @@
 #include <network.h>
+
 #include <map>
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
@@ -9,7 +10,9 @@
 #include <stdio.h>
 
 using namespace ff;
+
 //! This is global thing!
+
 class Slave{
 public:
     Slave(ffnet::NetNervureFromFile& nnff)
@@ -40,7 +43,7 @@ public:
 
     void    onConnSucc(ffnet::TCPConnectionBase* pConn)
     {
-        auto it = pConn->getRemoteEndpointPtr();
+        ffnet::EndpointPtr_t it = pConn->getRemoteEndpointPtr();
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
         uint16_t port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-client.target-svr-port");
 
@@ -54,7 +57,7 @@ public:
 
     void    onLostTCPConnection(ffnet::EndpointPtr_t pEP)
     {
-        auto it = pEP;
+        ffnet::EndpointPtr_t it = pEP;
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
         uint16_t port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-client.target-svr-port");
 
@@ -67,6 +70,7 @@ public:
     
     void onRecvSendFileDirReq(boost::shared_ptr<FileSendDirReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        std::cout<<"recv SendFileDirReq ..."<<std::endl;
         boost::shared_ptr<FileSendDirAck> pReply(new FileSendDirAck());
         //Specify the dire path here
 	if((pReply->dir() = newDirAtCWD(globalDirStr,"/home/sherry")) == "")
@@ -94,11 +98,13 @@ protected:
 void  press_and_stop(ffnet::NetNervureFromFile& nnff, Slave& s)
 {
     std::cout<<"Press any key to quit..."<<std::endl;
-    getc(stdin);
+    std::cin.get();
     s.stop();
     nnff.stop();
     std::cout<<"Stopping, please wait..."<<std::endl;
 }
+
+
 int main(int argc, char* argv[])
 {
     ffnet::Log::init(ffnet::Log::TRACE, "slave.log");
@@ -115,7 +121,7 @@ int main(int argc, char* argv[])
 
     t.async_wait(boost::bind(&Slave::onTimerSendHearBeat, &s,
             boost::asio::placeholders::error, &t));
-    boost::thread monitor_thrd(boost::bind(&press_and_stop, boost::ref(nnff), boost::ref(s)));
+    boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff), boost::ref(s)));
     
     nnff.run();
     monitor_thrd.join();

@@ -18,9 +18,9 @@ public:
 
     void onLostTCPConnection(ffnet::EndpointPtr_t pEP)
     {
-        auto p = pEP;
+        ffnet::EndpointPtr_t p = pEP;
         std::string key = endpoint_to_string(p);
-        auto it = m_oSlavePoints.find(key);
+        slave_points_t::iterator it = m_oSlavePoints.find(key);
         if(it != m_oSlavePoints.end())
         {
             m_oSlavePoints.erase(it);

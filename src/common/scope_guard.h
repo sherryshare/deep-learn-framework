@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  * *************************************************/
+#if 0
 #ifndef FFDL_COMMON_SCOPE_GUARD_H_
 #define FFDL_COMMON_SCOPE_GUARD_H_
 
@@ -45,3 +46,5 @@ class scope_guard {
 }//end namespace ff
 
 #endif
+#endif
+

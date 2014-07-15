@@ -3,9 +3,9 @@
 #include <sstream>
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
-#include "pkgs/file_send.h"
-#include "dsource/divide.h"
-#include "sae/sae_from_config.h"
+//#include "pkgs/file_send.h"
+//#include "dsource/divide.h"
+//#include "sae/sae_from_config.h"
 
 using namespace ff;
 class DLMaster {
@@ -18,7 +18,7 @@ public:
     
     void    onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
-        auto it = pConn->getRemoteEndpointPtr();
+        ffnet::EndpointPtr_t it = pConn->getRemoteEndpointPtr();
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
         uint16_t port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-client.target-svr-port");
 
@@ -75,9 +75,9 @@ public:
         }
         std::cout << "output DIR = " << output_dir << std::endl;
 
-        m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
-        divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
-        m_p_sae = SAE_create(m_p_sae_nc);
+        //!m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
+        //!divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
+        //!m_p_sae = SAE_create(m_p_sae_nc);
 //         SAE_run(m_p_sae,output_dir,m_p_sae_nc);//run an sae
 //         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
 //         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
@@ -87,10 +87,11 @@ public:
     {
         std::string& slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
-        file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
+        //file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //Send divided inputs
-        send_data_from_dir(static_cast<std::string>("./") + globalDirStr,pEP->address().to_string(),slave_path);
+        
+        //send_data_from_dir(static_cast<std::string>("./") + globalDirStr,pEP->address().to_string(),slave_path);
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
         boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
 	startMsg->cmd() = "haha!";
@@ -99,11 +100,12 @@ public:
     }
 
 protected:
+    typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
     ffnet::NetNervureFromFile&     m_oNNFF;
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
     std::string m_str_sae_configfile;
     std::string m_str_fbnn_ConfigFile;
-    ff::SAE_ptr m_p_sae;
+    //ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
     NervureConfigurePtr m_p_fbnn_nc;
 };

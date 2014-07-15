@@ -10,7 +10,7 @@
 namespace ff
 {
   class SAE;
-  typedef std::shared_ptr<SAE> SAE_ptr;
+  typedef boost::shared_ptr<SAE> SAE_ptr;
   class SAE
   {
     public:
@@ -20,7 +20,7 @@ namespace ff
 	    const double inputZeroMaskedFraction = 0.5);
         void    SAETrain(const FMatrix& train_x, 
 			 const Opts& opts, 
-			 const SAE_ptr& pSAE = nullptr);
+			 const SAE_ptr& pSAE = SAE_ptr((SAE *)NULL));
 	const std::vector<FBNN_ptr>& get_m_oAEs(void) const {return m_oAEs;};
 
     protected:

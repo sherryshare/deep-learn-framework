@@ -8,7 +8,7 @@
 #include <sstream>
 
 namespace ff {
-typedef std::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
+typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
 SAE_ptr SAE_create(const NervureConfigurePtr& pnc);
 bool SAE_run(const SAE_ptr& psae,const std::string& data_dir, const NervureConfigurePtr& pnc);
 void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc);

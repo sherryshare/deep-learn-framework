@@ -4,20 +4,16 @@ namespace ff {
 
 static FMatrix_ptr read_train_x(const std::string& input_file)
 {
-    FMatrix_ptr res = nullptr;
-    mat_t *mat = nullptr;
-    scope_guard _l([&mat, input_file]() {
-        mat = Mat_Open(input_file.c_str(), MAT_ACC_RDONLY);
-    },
-    [&mat]() {
-        Mat_Close(mat);
-    });
+    FMatrix_ptr res;
+    mat_t *mat = NULL;
+    mat = Mat_Open(input_file.c_str(), MAT_ACC_RDONLY);
+
     if(!mat) {
         std::cout <<"cannot open "<<input_file<<std::endl;
         return res;
     }
     matvar_t *var = 0;
-    while((var = Mat_VarReadNextInfo(mat)) != nullptr) {
+    while((var = Mat_VarReadNextInfo(mat)) != NULL) {
         if(strcmp(var->name, "train_x") == 0)
         {
             res = read_matrix_in_mat(mat, var->name);
@@ -26,6 +22,7 @@ static FMatrix_ptr read_train_x(const std::string& input_file)
         }
         Mat_VarFree(var);
     }
+    Mat_Close(mat);
     return res;
 }
 
@@ -51,7 +48,7 @@ static bool write_to_file(const std::string& output_file,const FMatrix_ptr& trai
 
 FMatrix_ptr read_matrix_from_file(const std::string& file_name)
 {
-    FMatrix_ptr res = nullptr;
+    FMatrix_ptr res;
     std::ifstream read_file(file_name.c_str());
     if(!read_file.is_open())
     {
@@ -66,7 +63,7 @@ FMatrix_ptr read_matrix_from_file(const std::string& file_name)
     ss >> rows;
     ss >> columns;
     std::cout << "read matrix: " << rows << "," << columns << std::endl;
-    res = std::make_shared<FMatrix>(FMatrix(rows,columns));
+    res = FMatrix_ptr(new FMatrix(rows,columns));
     for(size_t i = 0; i < rows && read_file.good(); ++i) {
         getline(read_file,line);
         std::stringstream ss(line);
@@ -80,7 +77,7 @@ FMatrix_ptr read_matrix_from_file(const std::string& file_name)
 
 FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part file
 {
-    FMatrix_ptr res = nullptr;
+    FMatrix_ptr res ;
     std::string file_name;
     DIR* dirp;
     struct dirent* direntp;
@@ -106,7 +103,7 @@ FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part fi
 bool divide_into_files(const int parts, const std::string& input_file, const std::string& output_dir)
 {
     FMatrix_ptr train_x = read_train_x(input_file);
-    if(train_x == nullptr)
+    if(train_x == NULL)
         return false;
     bool retVal = true;
     // Divide inputs into para groups.
@@ -124,7 +121,7 @@ bool divide_into_files(const int parts, const std::string& input_file, const std
         FMatrix para_x(curSize,train_x->columns());
         for(int r = 0; r < curSize; ++r)//randperm()
             row(para_x,r) = row(*train_x,iRandVec[i * baseSize + r]);
-        train_x_pvec.push_back(std::make_shared<FMatrix>(para_x));
+        train_x_pvec.push_back(FMatrix_ptr(new FMatrix(para_x)));
     }
     std::cout << std::endl;
     for(int i = 0; i < parts; ++i)

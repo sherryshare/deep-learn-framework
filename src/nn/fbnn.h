@@ -16,7 +16,7 @@ namespace ff
   /* This class represents Feedforward Backpropagate Neural Network
    */
   class FBNN;
-  typedef std::shared_ptr<FBNN> FBNN_ptr;
+  typedef boost::shared_ptr<FBNN> FBNN_ptr;
   
 //   typedef tbb::spin_rw_mutex RWMutex;
   typedef boost::shared_mutex RWMutex;
@@ -27,8 +27,8 @@ namespace ff
 	   const std::string& activeStr = "tanh_opt", 
 	   const double learningRate = 2, const double zeroMaskedFraction = 0.0,
 	   const bool testing = false, const std::string& outputStr = "sigm");
-      FBNN(const FBNN& p) = delete;
-      FBNN& operator =(const FBNN& p) = delete;
+      //FBNN(const FBNN& p) = delete;
+      //FBNN& operator =(const FBNN& p) = delete;
       
       const std::vector<FMatrix_ptr>& get_m_oWs(void) const {return m_oWs;};
       const std::vector<FMatrix_ptr>& get_m_oVWs(void) const {return m_oVWs;};
@@ -55,7 +55,7 @@ namespace ff
 	  for(size_t i = 0; i < odWs.size(); i++)
 	  {
 	    FMatrix m(*odWs[i]);
-	    m_odWs.push_back(std::make_shared<FMatrix>(m));
+	    m_odWs.push_back(FMatrix_ptr(new FMatrix(m)));
 	  }
 	}
 	else
@@ -73,12 +73,12 @@ namespace ff
 		      const Opts& opts, 
 		      const FMatrix& valid_x, 
 		      const FMatrix& valid_y, 
-		      const FBNN_ptr pFBNN = nullptr);
+		      const FBNN_ptr pFBNN = FBNN_ptr((FBNN *)NULL));
 
       void      train(const FMatrix& train_x, 
 		      const FMatrix& train_y , 
 		      const Opts& opts, 
-		      const FBNN_ptr pFBNN = nullptr);
+		      const FBNN_ptr pFBNN = FBNN_ptr((FBNN *) NULL));
       double    nnff(const FMatrix& x, const FMatrix& y);
       void      nnbp(void);
       void	nnapplygrads(void);

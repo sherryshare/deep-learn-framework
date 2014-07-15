@@ -18,7 +18,7 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
     std::cout << "Pretrain an SAE" << std::endl;
     std::cout << "sae_arch = " << sae_arch << "numel(sae_arch) = " << numel(sae_arch) << std::endl;
     SAE sae(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction);
-    return std::make_shared<SAE>(sae);
+    return SAE_ptr(new SAE(sae));
 }
 
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
@@ -45,7 +45,7 @@ void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
 bool SAE_run(const SAE_ptr& psae,const std::string& data_dir, const NervureConfigurePtr& pnc)
 {
     FMatrix_ptr train_x = read_matrix_from_dir(data_dir);
-    if(train_x == nullptr)
+    if(train_x == NULL)
         return false;
     *train_x = (*train_x) / 255;
     Opts opts;
@@ -60,7 +60,7 @@ void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
     const std::string activationFunction = getActivationFunctionFromNervureConfigure(pnc);
     const double learningRate = getLearningRateFromNervureConfigure(pnc);
     TData d = read_data(input_file);
-    if(d.train_x == nullptr || d.train_y == nullptr || d.test_x == nullptr || d.test_y == nullptr)
+    if(d.train_x == NULL || d.train_y == NULL || d.test_x == NULL || d.test_y == NULL)
         return;
     *d.train_x = (*d.train_x) / 255;
     *d.test_x = (*d.test_x) / 255;

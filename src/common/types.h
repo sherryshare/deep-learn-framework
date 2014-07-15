@@ -2,7 +2,6 @@
 #define FFDL_COMMON_TYPES_H_
 
 #include <string>
-#include <cstdint>
 #include <memory>
 #include <boost/shared_ptr.hpp>
 
@@ -22,7 +21,7 @@ struct slave_point_t{
 typedef boost::shared_ptr<slave_point_t> slave_point_spt;
 typedef slave_point_t* slave_point_pt;
 
-typedef  std::uint16_t uint16_t;
+typedef  boost::uint16_t uint16_t;
 
 }//end namespace ff
 

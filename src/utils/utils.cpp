@@ -41,7 +41,7 @@ std::string local_ip_v4()
     return "";
 }
 
-
+/*
 int32_t count_elapse_microsecond(const std::function<void ()>& f)
 {
     using namespace std::chrono;
@@ -64,5 +64,6 @@ int32_t count_elapse_second(const std::function<void ()>& f)
     f();
     end = system_clock::now();
     return duration_cast<seconds>(end-start).count();
-}
+}*/
+
 }//end namespace ff

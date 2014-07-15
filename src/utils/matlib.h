@@ -15,7 +15,7 @@ FMatrix      rand(const int32_t m, const int32_t n);
 void randperm(const int32_t n, std::vector<int32_t>& iVector);
 
 template<class T>
-size_t      numel(const T& t, typename std::enable_if<is_matrix<T>::value, void>::type* p = nullptr)
+size_t      numel(const T& t, typename boost::enable_if<is_matrix<T>, void>::type* p = NULL)
 {
     return t.rows() * t.columns();
 }
@@ -26,7 +26,7 @@ FMatrix     ones(const int32_t m, const int32_t n);
 
 ///TODO : performance issue here, we should use lazy evaluation here!
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type add(const FMatrix& m, const T& v)
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type add(const FMatrix& m, const T& v)
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -41,7 +41,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type add(const F
 
 /////////////////////////////////
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type sub(const FMatrix& m, const T& v)
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type sub(const FMatrix& m, const T& v)
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -54,7 +54,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type sub(const F
     return res;
 }
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type sub(const T& v, const FMatrix& m )
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type sub(const T& v, const FMatrix& m )
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -69,7 +69,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type sub(const T
 
 /////////////////
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type mul(const FMatrix& m, const T& v)
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type mul(const FMatrix& m, const T& v)
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -84,7 +84,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type mul(const F
 
 ///////////////////
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type div(const FMatrix& m, const T& v)
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type div(const FMatrix& m, const T& v)
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -97,7 +97,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type div(const F
     return res;
 }
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type div(const T& v, const FMatrix& m )
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type div(const T& v, const FMatrix& m )
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -113,7 +113,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type div(const T
 FMatrix trans(const FMatrix& m);
 
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type largerThan(const FMatrix& m, const T& v)
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type largerThan(const FMatrix& m, const T& v)
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -129,7 +129,7 @@ typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type largerThan(
     return res;
 }
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type largerThan(const T& v, const FMatrix& m )
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type largerThan(const T& v, const FMatrix& m )
 {
     FMatrix res(m.rows(), m.columns());
     for(size_t i = 0; i < m.rows(); ++i)
@@ -149,7 +149,7 @@ FMatrix bitWiseMul(const FMatrix& m, const FMatrix& m1);
 
 ////////////////////
 template<class T>
-typename std::enable_if<std::is_arithmetic<T>::value, FMatrix>::type addPreColumn(const FMatrix& m, const T& v )//add a column before m
+typename boost::enable_if<boost::is_arithmetic<T>, FMatrix>::type addPreColumn(const FMatrix& m, const T& v )//add a column before m
 {
     FMatrix res(m.rows(),m.columns() + 1);
     column(res,0) = v;
@@ -174,24 +174,24 @@ FMatrix repmat(const FMatrix& m, const int32_t rowX, const int32_t columnX);
 
 };//end namespace ff
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator + (const ff::FMatrix& t1, const T& t)
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator + (const ff::FMatrix& t1, const T& t)
 {
     return ff::add(t1, t);
 }
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator + (const T& t1, const ff::FMatrix& t )
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator + (const T& t1, const ff::FMatrix& t )
 {
     return ff::add(t, t1);
 }
 
 //////////////////////////////
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator -  (const ff::FMatrix& t1, const T& t )
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator -  (const ff::FMatrix& t1, const T& t )
 {
     return ff::sub(t1, t);
 }
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator - (const T& t1, const ff::FMatrix& t )
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator - (const T& t1, const ff::FMatrix& t )
 {
     return ff::sub(t1, t);
 }
@@ -215,18 +215,18 @@ typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operato
 //       return ff::div(t1, t);
 //     }
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator / (const T& t1, const ff::FMatrix& t )
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator / (const T& t1, const ff::FMatrix& t )
 {
     return ff::div(t1, t);
 }
 ////////////////
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator > (const ff::FMatrix& t1, const T& t)
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator > (const ff::FMatrix& t1, const T& t)
 {
     return ff::largerThan(t1, t);
 }
 template <class T>
-typename std::enable_if<std::is_arithmetic<T>::value, ff::FMatrix>::type operator > (const T& t1, const ff::FMatrix& t )
+typename boost::enable_if<boost::is_arithmetic<T>, ff::FMatrix>::type operator > (const T& t1, const ff::FMatrix& t )
 {
     return ff::largerThan(t1, t);
 }
