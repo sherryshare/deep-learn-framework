@@ -13,11 +13,11 @@ include_directories(${PROJECT_SOURCE_DIR}/src ${FFNET_ROOT_DIR})
 link_directories(${FFNET_ROOT_DIR}/lib)
 message(${FFNET_ROOT_DIR}/lib)
 
-#    src/pkgs/file_send.cpp
 set(cmn_src src/pkgs/ack_nodes.cpp
     src/pkgs/cmd_send.cpp
     src/pkgs/heart_beat.cpp
     src/pkgs/req_nodes.cpp
+    src/pkgs/file_send.cpp
     src/utils/utils.cpp
   )
   

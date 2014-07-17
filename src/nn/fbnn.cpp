@@ -59,54 +59,54 @@ void FBNN::train(const FMatrix& train_x,
     {
         std::cout << "start numpochs " << i << std::endl;
         //int32_t elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this] {
-            std::vector<int32_t> iRandVec;
-            randperm(train_x.rows(),iRandVec);
-            std::cout << "start batch: ";
-            for(int32_t j = 0; j < ibatchNum; ++j)
+        std::vector<int32_t> iRandVec;
+        randperm(train_x.rows(),iRandVec);
+        std::cout << "start batch: ";
+        for(int32_t j = 0; j < ibatchNum; ++j)
+        {
+            std::cout << " " << j;
+            if(pFBNN)//pull
             {
-                std::cout << " " << j;
-                if(pFBNN)//pull
-                {
 // 		    TMutex::scoped_lock lock;
 // 		    lock.acquire(pFBNN->W_RWMutex,false);
 // 		    lock.release();//reader lock tbb
-                    boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);
-                    set_m_oWs(pFBNN->get_m_oWs());
-                    if(double_larger_than_zero(m_fMomentum))
-                        set_m_oVWs(pFBNN->get_m_oVWs());
-                    rlock.unlock();
-                }
-                int32_t curBatchSize = opts.batchsize;
-                if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
-                    curBatchSize = train_x.rows() % opts.batchsize;
-                FMatrix batch_x(curBatchSize,train_x.columns());
-                for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
-                    row(batch_x,r) = row(train_x,iRandVec[j * opts.batchsize + r]);
+                boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);
+                set_m_oWs(pFBNN->get_m_oWs());
+                if(double_larger_than_zero(m_fMomentum))
+                    set_m_oVWs(pFBNN->get_m_oVWs());
+                rlock.unlock();
+            }
+            int32_t curBatchSize = opts.batchsize;
+            if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
+                curBatchSize = train_x.rows() % opts.batchsize;
+            FMatrix batch_x(curBatchSize,train_x.columns());
+            for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
+                row(batch_x,r) = row(train_x,iRandVec[j * opts.batchsize + r]);
 
-                //Add noise to input (for use in denoising autoencoder)
-                if(m_fInputZeroMaskedFraction != 0)
-                    batch_x = bitWiseMul(batch_x,(rand(curBatchSize,train_x.columns())>m_fInputZeroMaskedFraction));
+            //Add noise to input (for use in denoising autoencoder)
+            if(m_fInputZeroMaskedFraction != 0)
+                batch_x = bitWiseMul(batch_x,(rand(curBatchSize,train_x.columns())>m_fInputZeroMaskedFraction));
 
-                FMatrix batch_y(curBatchSize,train_y.columns());
-                for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
-                    row(batch_y,r) = row(train_y,iRandVec[j * opts.batchsize + r]);
+            FMatrix batch_y(curBatchSize,train_y.columns());
+            for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
+                row(batch_y,r) = row(train_y,iRandVec[j * opts.batchsize + r]);
 
-                L(i*ibatchNum+j,0) = nnff(batch_x,batch_y);
-                nnbp();
-                nnapplygrads();
-                if(pFBNN)//push
-                {
+            L(i*ibatchNum+j,0) = nnff(batch_x,batch_y);
+            nnbp();
+            nnapplygrads();
+            if(pFBNN)//push
+            {
 // 		    TMutex::scoped_lock lock;
 // 		    lock.acquire(W_RWMutex);
 // 		    lock.release();//writer lock tbb
-                    boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
-                    pFBNN->set_m_odWs(m_odWs);
-                    pFBNN->nnapplygrads();
-                    wlock.unlock();
-                }
-// 	      std::cout << "end batch " << j << std::endl;
+                boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
+                pFBNN->set_m_odWs(m_odWs);
+                pFBNN->nnapplygrads();
+                wlock.unlock();
             }
-            std::cout << std::endl;
+// 	      std::cout << "end batch " << j << std::endl;
+        }
+        std::cout << std::endl;
         //});
         //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
         //loss calculate use nneval
@@ -331,11 +331,11 @@ void FBNN::nnapplygrads(void )
 }
 
 //evaluates performance of neural network
-void ff::FBNN::nneval(Loss& loss, 
-		      const FMatrix& train_x, 
-		      const FMatrix& train_y, 
-		      const FMatrix& valid_x, 
-		      const FMatrix& valid_y)
+void ff::FBNN::nneval(Loss& loss,
+                      const FMatrix& train_x,
+                      const FMatrix& train_y,
+                      const FMatrix& valid_x,
+                      const FMatrix& valid_y)
 {
 //     std::cout << "start nneval" << std::endl;
     //training performance

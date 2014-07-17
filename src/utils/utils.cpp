@@ -2,7 +2,7 @@
 #include <boost/asio.hpp>
 #include <cassert>
 
-namespace ff{
+namespace ff {
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP)
 {
     std::stringstream ss;

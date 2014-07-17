@@ -5,11 +5,11 @@
 
 namespace ff
 {
-  typedef struct 
-  {
+typedef struct
+{
     int32_t numpochs;// = 1;
     int32_t batchsize;// = 100;
-  } Opts;
+} Opts;
 }//end namespace ff
 
 #endif

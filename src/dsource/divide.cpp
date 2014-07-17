@@ -34,14 +34,14 @@ static bool write_to_file(const std::string& output_file,const FMatrix_ptr& trai
         return false;
     }
     else {
-	std::cout << "write file: " << output_file << std::endl;
+        std::cout << "write file: " << output_file << std::endl;
 // 	out_file << train_x->rows() << " " << train_x->columns() << std::endl;//real command
-	out_file << "20" << " " << train_x->columns() << std::endl;//for quick test
+        out_file << "20" << " " << train_x->columns() << std::endl;//for quick test
 //         for(size_t r = 0; r < train_x->rows(); ++r)//real command
-	for(size_t r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
-	{
-	  out_file << row(*train_x,r);	  
-	}
+        for(size_t r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
+        {
+            out_file << row(*train_x,r);
+        }
     }
     out_file.close();
 }
@@ -67,17 +67,20 @@ FMatrix_ptr read_matrix_from_file(const std::string& file_name)
     for(size_t i = 0; i < rows && read_file.good(); ++i) {
         getline(read_file,line);
         std::stringstream ss(line);
-	for(size_t j = 0; j < columns; ++j)
-	{
-	    ss >> res->operator()(i, j);
-	}        
+        for(size_t j = 0; j < columns; ++j)
+        {
+            ss >> res->operator()(i, j);
+        }
     }
     return res;
 }
 
 FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part file
 {
-    FMatrix_ptr res ;
+    if(!is_dir(dir)){
+        return read_matrix_from_file(dir);
+    }
+    FMatrix_ptr res ; 
     std::string file_name;
     DIR* dirp;
     struct dirent* direntp;
@@ -90,7 +93,7 @@ FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part fi
             if(dotIndex != std::string::npos && file_name.substr(dotIndex,file_name.length() - dotIndex) == ".part")
             {
                 std::cout << "find input_file " << file_name << std::endl;
-		file_name = dir + "/" + file_name;
+                file_name = dir + "/" + file_name;
                 break;
             }
         }
@@ -126,9 +129,9 @@ bool divide_into_files(const int parts, const std::string& input_file, const std
     std::cout << std::endl;
     for(int i = 0; i < parts; ++i)
     {
-	std::stringstream ss;
-	ss << output_dir << "/train_x_" << i << ".part";
-	std::cout << "file:" << ss.str() << std::endl;
+        std::stringstream ss;
+        ss << output_dir << "/train_x_" << i << ".part";
+        std::cout << "file:" << ss.str() << std::endl;
         retVal &= write_to_file(ss.str(),train_x_pvec[i]);
     }
     return retVal;

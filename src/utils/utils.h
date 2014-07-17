@@ -12,8 +12,8 @@
 
 
 
-namespace ff{
-  
+namespace ff {
+
 const std::string globalDirStr = "globalFiles";
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
@@ -32,7 +32,7 @@ std::string local_ip_v4();
 //     }
 //     return handle;
 // }
-// 
+//
 // inline void closeLibrary(void* handle)
 // {
 //     // close the library
@@ -46,10 +46,10 @@ inline std::string newDirAtCWD(const std::string & newFileName, const std::strin
     std::string output_dir;
     if((output_dir = getcwd(NULL,0)) == "") {
         std::cout << "Error when getcwd!" << std::endl;
-	if(backUpPath == "")
-	  return output_dir;
-	else
-	  output_dir = backUpPath;
+        if(backUpPath == "")
+            return output_dir;
+        else
+            output_dir = backUpPath;
     }
     output_dir += static_cast<std::string>("/") + newFileName;
     if(access(output_dir.c_str(),F_OK) == -1) {

@@ -4,5 +4,5 @@
 using namespace ff;
 int main(void)
 {
-  file_send("../confs/slave_net_conf.ini","211.69.198.47","/home/sherry");
+    file_send("../confs/slave_net_conf.ini","211.69.198.47","/home/sherry");
 }

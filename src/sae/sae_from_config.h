@@ -36,8 +36,8 @@ inline const std::string getInputFileNameFromNervureConfigure(const NervureConfi
 }
 
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
-                                      const std::string& structure_name,
-                                      Arch_t & arch);
+                                 const std::string& structure_name,
+                                 Arch_t & arch);
 }//end namespace ff
 
 #endif

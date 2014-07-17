@@ -9,27 +9,29 @@
 
 namespace ff
 {
-  class SAE;
-  typedef boost::shared_ptr<SAE> SAE_ptr;
-  class SAE
-  {
-    public:
-        SAE(const Arch_t& arch,
-	    const std::string& activationFunction = "sigm", 
-	    const double learningRate = 1, 
-	    const double inputZeroMaskedFraction = 0.5);
-        void    SAETrain(const FMatrix& train_x, 
-			 const Opts& opts, 
-			 const SAE_ptr& pSAE = SAE_ptr((SAE *)NULL));
-	const std::vector<FBNN_ptr>& get_m_oAEs(void) const {return m_oAEs;};
+class SAE;
+typedef boost::shared_ptr<SAE> SAE_ptr;
+class SAE
+{
+public:
+    SAE(const Arch_t& arch,
+        const std::string& activationFunction = "sigm",
+        const double learningRate = 1,
+        const double inputZeroMaskedFraction = 0.5);
+    void    SAETrain(const FMatrix& train_x,
+                     const Opts& opts,
+                     const SAE_ptr& pSAE = SAE_ptr((SAE *)NULL));
+    const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
+        return m_oAEs;
+    };
 
-    protected:
-        std::vector<FBNN_ptr>        m_oAEs;
-        const std::string    m_strActivationFunction;
-        double          m_fLearningRate;
-        const double          m_fInputZeroMaskedFraction;
-  };//end class SAE
-  
+protected:
+    std::vector<FBNN_ptr>        m_oAEs;
+    const std::string    m_strActivationFunction;
+    double          m_fLearningRate;
+    const double          m_fInputZeroMaskedFraction;
+};//end class SAE
+
 }//end namespace ff
 
 #endif

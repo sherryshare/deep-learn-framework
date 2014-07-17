@@ -3,20 +3,20 @@
 #include <sstream>
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
-//#include "pkgs/file_send.h"
-//#include "dsource/divide.h"
-//#include "sae/sae_from_config.h"
+#include "pkgs/file_send.h"
+#include "dsource/divide.h"
+#include "sae/sae_from_config.h"
 
 using namespace ff;
 class DLMaster {
 
 public:
     DLMaster(ffnet::NetNervureFromFile& nnff, const std::string& sae_config_file, const std::string& fbnn_config_file)
-        : m_oNNFF(nnff), 
-        m_str_sae_configfile(sae_config_file),
-        m_str_fbnn_ConfigFile(fbnn_config_file) {}
-    
-    void    onConnSucc(ffnet::TCPConnectionBase*pConn)
+        : m_oNNFF(nnff),
+          m_str_sae_configfile(sae_config_file),
+          m_str_fbnn_ConfigFile(fbnn_config_file) {}
+
+    void onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
         ffnet::EndpointPtr_t it = pConn->getRemoteEndpointPtr();
         std::string master_addr = m_oNNFF.NervureConf()->get<std::string>("tcp-client.target-svr-ip-addr");
@@ -75,9 +75,9 @@ public:
         }
         std::cout << "output DIR = " << output_dir << std::endl;
 
-        //!m_p_sae_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
-        //!divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
-        //!m_p_sae = SAE_create(m_p_sae_nc);
+        m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
+        divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
+        m_p_sae = SAE_create(m_p_sae_nc);
 //         SAE_run(m_p_sae,output_dir,m_p_sae_nc);//run an sae
 //         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
 //         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
@@ -87,14 +87,22 @@ public:
     {
         std::string& slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
-        //file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
+        file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
         std::cout<<"path on slave "<<slave_path<<std::endl;
-        //Send divided inputs
-        
-        //send_data_from_dir(static_cast<std::string>("./") + globalDirStr,pEP->address().to_string(),slave_path);
+        //Send divided inputs        
+        std::string data_dir = send_data_from_dir(static_cast<std::string>("./") +
+        globalDirStr,pEP->address().to_string(),slave_path);
+        //Get dl_master server port & ip
+        std::string server_addr = m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip");
+        uint16_t server_port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
         //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
         boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
-	startMsg->cmd() = "haha!";
+        int startIndex = m_str_sae_configfile.find_last_of('/') + 1;
+        std::stringstream ss;
+        ss << "./dl_worker " << m_str_sae_configfile.substr(startIndex,m_str_sae_configfile.length() - startIndex);
+        ss << " " << data_dir;
+        ss << " " << server_addr << " " << server_port;
+        startMsg->cmd() = ss.str(); 
         std::cout << "send start Cmd Message!" << std::endl;
         m_oNNFF.send(startMsg, pEP);
     }
@@ -105,7 +113,7 @@ protected:
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
     std::string m_str_sae_configfile;
     std::string m_str_fbnn_ConfigFile;
-    //ff::SAE_ptr m_p_sae;
+    ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
     NervureConfigurePtr m_p_fbnn_nc;
 };
@@ -145,7 +153,7 @@ int main(int argc, char* argv[])
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
-    
+
     nnff.run();
     monitor_thrd.join();
     return 0;
