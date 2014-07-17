@@ -19,8 +19,10 @@ public:
         const double learningRate = 1,
         const double inputZeroMaskedFraction = 0.5);
     void    SAETrain(const FMatrix& train_x,
+                     const Opts& opts);
+    void    SAETrain(const FMatrix& train_x,
                      const Opts& opts,
-                     const SAE_ptr& pSAE = SAE_ptr((SAE *)NULL));
+                     const DLWorker* pDLWorker);
     const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
         return m_oAEs;
     };

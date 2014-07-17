@@ -3,8 +3,8 @@
 #include "pkgs/pkgs.h"
 #include "utils/utils.h"
 
-using namespace ff;
 //! This is global thing!
+namespace ff {
 class RMMaster {
 public:
     RMMaster(ffnet::NetNervureFromFile& nnff)
@@ -55,7 +55,9 @@ protected:
     slave_points_t      m_oSlavePoints;
     ffnet::NetNervureFromFile&     m_oNNFF;
 };
+}//end namespace ff
 
+using namespace ff;
 void  press_and_stop(ffnet::NetNervureFromFile& nnff, RMMaster& master)
 {
     std::cout<<"Press any key to quit..."<<std::endl;

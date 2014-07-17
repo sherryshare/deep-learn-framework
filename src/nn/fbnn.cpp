@@ -47,8 +47,7 @@ void FBNN::train(const FMatrix& train_x,
                  const FMatrix& train_y,
                  const Opts& opts,
                  const FMatrix& valid_x,
-                 const FMatrix& valid_y,
-                 const FBNN_ptr pFBNN)
+                 const FMatrix& valid_y)
 {
     int32_t ibatchNum = train_x.rows() / opts.batchsize + (train_x.rows() % opts.batchsize != 0);
     FMatrix L = zeros(opts.numpochs * ibatchNum, 1);
@@ -65,17 +64,6 @@ void FBNN::train(const FMatrix& train_x,
         for(int32_t j = 0; j < ibatchNum; ++j)
         {
             std::cout << " " << j;
-            if(pFBNN)//pull
-            {
-// 		    TMutex::scoped_lock lock;
-// 		    lock.acquire(pFBNN->W_RWMutex,false);
-// 		    lock.release();//reader lock tbb
-                boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);
-                set_m_oWs(pFBNN->get_m_oWs());
-                if(double_larger_than_zero(m_fMomentum))
-                    set_m_oVWs(pFBNN->get_m_oVWs());
-                rlock.unlock();
-            }
             int32_t curBatchSize = opts.batchsize;
             if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
                 curBatchSize = train_x.rows() % opts.batchsize;
@@ -94,16 +82,6 @@ void FBNN::train(const FMatrix& train_x,
             L(i*ibatchNum+j,0) = nnff(batch_x,batch_y);
             nnbp();
             nnapplygrads();
-            if(pFBNN)//push
-            {
-// 		    TMutex::scoped_lock lock;
-// 		    lock.acquire(W_RWMutex);
-// 		    lock.release();//writer lock tbb
-                boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
-                pFBNN->set_m_odWs(m_odWs);
-                pFBNN->nnapplygrads();
-                wlock.unlock();
-            }
 // 	      std::cout << "end batch " << j << std::endl;
         }
         std::cout << std::endl;
@@ -121,18 +99,15 @@ void FBNN::train(const FMatrix& train_x,
         //std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
         std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;
         m_fLearningRate *= m_fScalingLearningRate;
-
 // 	  std::cout << "end numpochs " << i << std::endl;
     }
-
 }
 void FBNN::train(const FMatrix& train_x,
                  const FMatrix& train_y,
-                 const Opts& opts,
-                 const FBNN_ptr pFBNN)
+                 const Opts& opts)
 {
     FMatrix emptyM;
-    train(train_x,train_y,opts,emptyM,emptyM,pFBNN);
+    train(train_x,train_y,opts,emptyM,emptyM);
 }
 
 //NNFF performs a feedforward pass

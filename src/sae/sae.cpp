@@ -22,7 +22,7 @@ SAE::SAE(const Arch_t& arch,
     std::cout << "Finish initialize!" << std::endl;
 }
 
-void SAE::SAETrain(const FMatrix& train_x, const Opts& opts, const SAE_ptr& pSAE)
+void SAE::SAETrain(const FMatrix& train_x, const Opts& opts)
 {
     std::cout << "Start training SAE." << std::endl;
     size_t num_ae = m_oAEs.size();
@@ -31,10 +31,24 @@ void SAE::SAETrain(const FMatrix& train_x, const Opts& opts, const SAE_ptr& pSAE
     {
         std::cout << "Training AE " << i+1 << " / " << num_ae << ", ";
         std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
-        if(pSAE)
-            m_oAEs[i]->train(x, x, opts, pSAE->m_oAEs[i]);
-        else
-            m_oAEs[i]->train(x, x, opts);
+        m_oAEs[i]->train(x, x, opts);
+        m_oAEs[i]->nnff(x, x);
+        x = *(m_oAEs[i]->get_m_oAs())[1];
+        x = delPreColumn(x);
+    }
+    std::cout << "End training SAE." << std::endl;
+}
+
+void SAE::SAETrain(const FMatrix& train_x, const Opts& opts, const DLWorker* pDLWorker)
+{
+    std::cout << "Start training SAE." << std::endl;
+    size_t num_ae = m_oAEs.size();
+    FMatrix x = train_x;
+    for( size_t i = 0; i < num_ae; ++i)
+    {
+        std::cout << "Training AE " << i+1 << " / " << num_ae << ", ";
+        std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
+        m_oAEs[i]->train(x, /*x, */opts, pDLWorker, i);
         m_oAEs[i]->nnff(x, x);
         x = *(m_oAEs[i]->get_m_oAs())[1];
         x = delPreColumn(x);

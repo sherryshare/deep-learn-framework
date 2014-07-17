@@ -10,7 +10,11 @@
 namespace ff {
 typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
 SAE_ptr SAE_create(const NervureConfigurePtr& pnc);
-bool SAE_run(const SAE_ptr& psae,const std::string& data_dir, const NervureConfigurePtr& pnc);
+// bool SAE_run(const SAE_ptr& psae,
+//              const std::string& data_dir, 
+//              const NervureConfigurePtr& pnc,
+//              const ffnet::EndpointPtr_t& pEP = ffnet::EndpointPtr_t((ffnet::Endpoint*)NULL)
+//             );
 void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc);
 
 inline const double getLearningRateFromNervureConfigure(const NervureConfigurePtr& pnc) {

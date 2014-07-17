@@ -15,6 +15,10 @@ enum MsgType {
     msg_send_file_dir_ack,
     msg_file_send,
     msg_cmd_start_req,
+    msg_pull_para_req,
+    msg_pull_para_ack,
+    msg_push_para_req,
+    msg_push_para_ack,
 };
 
 class HeartBeatMsg : public ffnet::Package
@@ -154,6 +158,29 @@ public:
     }
 protected:
     std::string m_strCmd;
+};
+
+class PullParaReq: public ffnet::Package
+{
+public:
+    PullParaReq()
+        : Package(msg_pull_para_req)
+    {}
+
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
+
+    virtual void archive(ffnet::Archive& ar)
+    {
+        ar.archive(m_u_sae_index);
+    }    
+
+protected:
+    int32_t m_u_sae_index;
 };
 
 }//end namespace ff

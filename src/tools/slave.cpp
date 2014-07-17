@@ -9,10 +9,9 @@
 #include <boost/shared_ptr.hpp>
 #include <stdio.h>
 
-using namespace ff;
-
 //! This is global thing!
 
+namespace ff {
 class Slave {
 public:
     Slave(ffnet::NetNervureFromFile& nnff)
@@ -25,7 +24,7 @@ public:
     }
 
     void onTimerSendHearBeat(const boost::system::error_code& /*e*/,
-                                    boost::asio::deadline_timer* t)
+                             boost::asio::deadline_timer* t)
     {
         if(m_b_svr_connected)
         {
@@ -93,7 +92,7 @@ public:
         std::cout << "Entering " << processName << " process..." << std::endl;
         system(pMsg->cmd().c_str());
         std::cout << "Leaving " << processName << " process..." << std::endl;
-        std::cout << "-------------------------------" << std::endl;  
+        std::cout << "-------------------------------" << std::endl;
     }
 
 protected:
@@ -102,7 +101,9 @@ protected:
     ffnet::EndpointPtr_t m_p_svr;
     boost::atomic<bool>    m_b_is_stopped;
 };
+}//end namespace ff
 
+using namespace ff;
 void  press_and_stop(ffnet::NetNervureFromFile& nnff, Slave& s)
 {
     std::cout<<"Press any key to quit..."<<std::endl;

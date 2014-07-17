@@ -11,15 +11,15 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
+#include "pkgs/pkgs.h"
+
 namespace ff
 {
 /* This class represents Feedforward Backpropagate Neural Network
  */
+class DLWorker;
 class FBNN;
 typedef boost::shared_ptr<FBNN> FBNN_ptr;
-
-//   typedef tbb::spin_rw_mutex RWMutex;
-typedef boost::shared_mutex RWMutex;
 
 class FBNN {
 public:
@@ -77,18 +77,21 @@ public:
         }
     };
 
+    void      train(const FMatrix& train_x,
+//                     const FMatrix& train_y ,
+                    const Opts& opts,
+                    const DLWorker* pDLWorker,
+                    const int32_t sae_index);
 
     void      train(const FMatrix& train_x,
                     const FMatrix& train_y,
                     const Opts& opts,
                     const FMatrix& valid_x,
-                    const FMatrix& valid_y,
-                    const FBNN_ptr pFBNN = FBNN_ptr((FBNN *)NULL));
+                    const FMatrix& valid_y);
 
     void      train(const FMatrix& train_x,
                     const FMatrix& train_y ,
-                    const Opts& opts,
-                    const FBNN_ptr pFBNN = FBNN_ptr((FBNN *) NULL));
+                    const Opts& opts);
     double    nnff(const FMatrix& x, const FMatrix& y);
     void      nnbp(void);
     void	nnapplygrads(void);
@@ -101,7 +104,7 @@ public:
     double	nntest(const FMatrix& x, const FMatrix& y);
     void	nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    RWMutex W_RWMutex;//only needed in para & master -- How to avoid when unnecessary? public
+//     RWMutex W_RWMutex;//only needed in para & master -- How to avoid when unnecessary? public
 
 protected:
 
