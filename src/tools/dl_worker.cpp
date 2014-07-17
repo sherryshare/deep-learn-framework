@@ -119,11 +119,11 @@ void FBNN::train(const FMatrix& train_x,
             if(m_fInputZeroMaskedFraction != 0)
                 batch_x = bitWiseMul(batch_x,(rand(curBatchSize,train_x.columns())>m_fInputZeroMaskedFraction));
 
-            FMatrix batch_y(curBatchSize,train_y.columns());
-            for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
-                row(batch_y,r) = row(train_y,iRandVec[j * opts.batchsize + r]);
+//             FMatrix batch_y(curBatchSize,train_y.columns());
+//             for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
+//                 row(batch_y,r) = row(train_y,iRandVec[j * opts.batchsize + r]);
 
-            L(i*ibatchNum+j,0) = nnff(batch_x,batch_y);
+            L(i*ibatchNum+j,0) = nnff(batch_x,batch_x);
             nnbp();
             nnapplygrads();
             //push under network conditions
@@ -138,14 +138,8 @@ void FBNN::train(const FMatrix& train_x,
         //});
         //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
         //loss calculate use nneval
-        if(valid_x.rows() == 0 || valid_y.rows() == 0) {
-            nneval(loss, train_x, train_y);
-            std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
-        }
-        else {
-            nneval(loss, train_x, train_y, valid_x, valid_y);
-            std::cout << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back() << std::endl;
-        }
+        nneval(loss, train_x, train_x);
+        std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
         //std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
         std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;
         m_fLearningRate *= m_fScalingLearningRate;

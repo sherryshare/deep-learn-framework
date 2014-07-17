@@ -42,21 +42,19 @@ void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
     }
 }
 
-// bool SAE_run(const SAE_ptr& psae,
-//              const std::string& data_dir, 
-//              const NervureConfigurePtr& pnc,
-//              const ffnet::EndpointPtr_t& pEP
-//             )
-// {
-//     FMatrix_ptr train_x = read_matrix_from_dir(data_dir);
-//     if(train_x == NULL)
-//         return false;
-//     *train_x = (*train_x) / 255;
-//     Opts opts;
-//     getOptsFromNervureConfigure(pnc,opts);
-//     psae->SAETrain(*train_x,opts,pEP);
-//     return true;
-// }
+bool SAE_run(const SAE_ptr& psae,
+             const std::string& data_dir, 
+             const NervureConfigurePtr& pnc)
+{
+    FMatrix_ptr train_x = read_matrix_from_dir(data_dir);
+    if(train_x == NULL)
+        return false;
+    *train_x = (*train_x) / 255;
+    Opts opts;
+    getOptsFromNervureConfigure(pnc,opts);
+    psae->SAETrain(*train_x,opts);
+    return true;
+}
 
 void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
 {

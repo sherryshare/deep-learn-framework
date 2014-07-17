@@ -78,6 +78,7 @@ public:
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
         m_p_sae = SAE_create(m_p_sae_nc);
+        SAE_run(m_p_sae,output_dir,m_p_sae_nc);
 //         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
 //         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
     }
