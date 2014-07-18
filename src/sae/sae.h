@@ -22,7 +22,9 @@ public:
                      const Opts& opts);
     void    SAETrain(const FMatrix& train_x,
                      const Opts& opts,
-                     const DLWorker* pDLWorker);
+                     ffnet::NetNervureFromFile& ref_NNFF,
+                     const ffnet::EndpointPtr_t& pEP
+                    );
     const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
         return m_oAEs;
     };

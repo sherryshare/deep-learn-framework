@@ -110,6 +110,89 @@ void FBNN::train(const FMatrix& train_x,
     train(train_x,train_y,opts,emptyM,emptyM);
 }
 
+//trains a neural net
+void FBNN::train(const FMatrix& train_x,
+                 const Opts& opts,
+                 ffnet::NetNervureFromFile& ref_NNFF,
+                 const ffnet::EndpointPtr_t& pEP,
+                 const int32_t sae_index)
+{
+    int32_t ibatchNum = train_x.rows() / opts.batchsize + (train_x.rows() % opts.batchsize != 0);
+    FMatrix L = zeros(opts.numpochs * ibatchNum, 1);
+    m_oLp = FMatrix_ptr(new FMatrix(L));
+    Loss loss;
+//       std::cout << "numpochs = " << opts.numpochs << std::endl;
+    for(int32_t i = 0; i < opts.numpochs; ++i)
+    {
+        std::cout << "start numpochs " << i << std::endl;
+        //int32_t elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this] {
+        std::vector<int32_t> iRandVec;
+        randperm(train_x.rows(),iRandVec);
+        std::cout << "start batch: ";
+        for(int32_t j = 0; j < ibatchNum; ++j)
+        {
+            std::cout << " " << j << std::endl;
+            //pull under network conditions
+            std::cout << "Need to pull weights!" << std::endl;
+            boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
+            pullReqMsg->sae_index() = sae_index;
+            ref_NNFF.send(pullReqMsg,pEP);
+            ref_NNFF.addNeedToRecvPkg<PullParaAck>(boost::bind(&ff::FBNN::onRecvPullAck, this, _1, _2));
+
+
+            int32_t curBatchSize = opts.batchsize;
+            if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
+                curBatchSize = train_x.rows() % opts.batchsize;
+            FMatrix batch_x(curBatchSize,train_x.columns());
+            for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
+                row(batch_x,r) = row(train_x,iRandVec[j * opts.batchsize + r]);
+
+            //Add noise to input (for use in denoising autoencoder)
+            if(m_fInputZeroMaskedFraction != 0)
+                batch_x = bitWiseMul(batch_x,(rand(curBatchSize,train_x.columns())>m_fInputZeroMaskedFraction));
+
+            L(i*ibatchNum+j,0) = nnff(batch_x,batch_x);
+            nnbp();
+            nnapplygrads();
+            //push under network conditions
+            std::cout << "Need to push weights!" << std::endl;
+            boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
+            copy(get_m_odWs().begin(),get_m_odWs().end(),std::back_inserter(pushReqMsg->dWs()));
+            pushReqMsg->sae_index() = sae_index;
+            ref_NNFF.send(pushReqMsg,pEP);
+//             ref_NNFF.addNeedToRecvPkg<PushParaAck>(boost::bind(&ff::FBNN::onRecvPushAck, this, _1, _2));
+
+        }
+        std::cout << std::endl;
+        //});
+        //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
+        //loss calculate use nneval
+        nneval(loss, train_x, train_x);
+        std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
+        //std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
+        std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;
+        m_fLearningRate *= m_fScalingLearningRate;
+
+//        std::cout << "end numpochs " << i << std::endl;
+    }
+
+}
+
+void FBNN::onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP)
+{
+    std::cout << "Receive pull ack!" << std::endl;
+    for(int i = 0; i < pMsg->Ws().size(); ++i)
+        std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
+    set_m_oWs(pMsg->Ws());
+    if(double_larger_than_zero(m_fMomentum))
+        set_m_oVWs(pMsg->VWs());
+}
+
+void FBNN::onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
+{
+    std::cout << "Receive push ack!" << std::endl;
+}
+
 //NNFF performs a feedforward pass
 double FBNN::nnff(const FMatrix& x, const FMatrix& y)
 {
@@ -358,3 +441,5 @@ void ff::FBNN::nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels)
 }
 
 }
+
+

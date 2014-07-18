@@ -78,7 +78,7 @@ public:
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
         m_p_sae = SAE_create(m_p_sae_nc);
-        SAE_run(m_p_sae,output_dir,m_p_sae_nc);
+//         SAE_run(m_p_sae,output_dir,m_p_sae_nc);
 //         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
 //         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
     }
@@ -107,6 +107,34 @@ public:
         m_oNNFF.send(startMsg, pEP);
     }
 
+    void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
+        boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
+        const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
+        const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
+        copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
+        std::cout << "size = " << ackMsg->Ws().size() << std::endl;
+        copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
+        std::cout << "size = " << ackMsg->VWs().size() << std::endl;
+        for(int i = 0; i < ackMsg->Ws().size(); ++i)
+            std::cout << ackMsg->Ws()[i]->operator()(0,0) << std::endl;
+        m_oNNFF.send(ackMsg,pEP);
+    }
+
+    void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        std::cout << "Receive push request!"  << std::endl;
+        //set odWs
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_odWs(pMsg->dWs());
+        //nnapplygrads
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();
+        for(int i = 0; i < pMsg->dWs().size(); ++i)
+            std::cout << pMsg->dWs()[i]->operator()(0,0) << std::endl;
+        boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
+        m_oNNFF.send(ackMsg,pEP);
+    }
+
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
     ffnet::NetNervureFromFile&     m_oNNFF;
@@ -123,7 +151,7 @@ protected:
 using namespace ff;
 void  press_and_stop(ffnet::NetNervureFromFile& nnff)
 {
-    
+
     std::cout<<"Press any key to quit..."<<std::endl;
     getc(stdin);
     nnff.stop();
@@ -154,6 +182,8 @@ int main(int argc, char* argv[])
 
     nnff.addNeedToRecvPkg<AckNodeMsg>(boost::bind(&DLMaster::onRecvAck, &master, _1, _2));
     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLMaster::onRecvSendFileDirAck, &master, _1, _2));
+    nnff.addNeedToRecvPkg<PullParaReq>(boost::bind(&DLMaster::onRecvPullReq, &master, _1, _2));
+    nnff.addNeedToRecvPkg<PushParaReq>(boost::bind(&DLMaster::onRecvPushReq, &master, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));

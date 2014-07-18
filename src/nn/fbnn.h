@@ -17,7 +17,6 @@ namespace ff
 {
 /* This class represents Feedforward Backpropagate Neural Network
  */
-class DLWorker;
 class FBNN;
 typedef boost::shared_ptr<FBNN> FBNN_ptr;
 
@@ -78,9 +77,9 @@ public:
     };
 
     void      train(const FMatrix& train_x,
-//                     const FMatrix& train_y ,
                     const Opts& opts,
-                    const DLWorker* pDLWorker,
+                    ffnet::NetNervureFromFile& ref_NNFF,
+                    const ffnet::EndpointPtr_t& pEP,
                     const int32_t sae_index);
 
     void      train(const FMatrix& train_x,
@@ -104,7 +103,8 @@ public:
     double	nntest(const FMatrix& x, const FMatrix& y);
     void	nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-//     RWMutex W_RWMutex;//only needed in para & master -- How to avoid when unnecessary? public
+    void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP);
+    void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP);
 
 protected:
 

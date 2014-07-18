@@ -41,7 +41,7 @@ public:
                 it->port() == m_u_server_port) {
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
-            SAE_run(m_p_sae,m_str_inputfile,m_p_sae_nc,it);//run an sae
+            SAE_run();
         }
     }
 
@@ -53,15 +53,15 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        m_p_sae->SAETrain(*train_x,opts,this);
+        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);
         return true;
     }
-
-    friend void FBNN::train(const FMatrix& train_x,
-//                     const FMatrix& train_y ,
-                            const Opts& opts,
-                            const DLWorker* pDLWorker,
-                            const int32_t sae_index);
+    
+//     void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP){
+//         std::cout << "Receive pull ack!" << std::endl; 
+//         for(int i = 0; i < pMsg->Ws().size(); ++i)
+//             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
+//     }
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
@@ -75,79 +75,6 @@ protected:
     NervureConfigurePtr m_p_sae_nc;
 };
 
-//trains a neural net
-void FBNN::train(const FMatrix& train_x,
-//                     const FMatrix& train_y ,
-                 const Opts& opts,
-                 const DLWorker* pDLWorker,
-                 const int32_t sae_index)
-{
-    int32_t ibatchNum = train_x.rows() / opts.batchsize + (train_x.rows() % opts.batchsize != 0);
-    FMatrix L = zeros(opts.numpochs * ibatchNum, 1);
-    m_oLp = FMatrix_ptr(new FMatrix(L));
-    Loss loss;
-//       std::cout << "numpochs = " << opts.numpochs << std::endl;
-    for(int32_t i = 0; i < opts.numpochs; ++i)
-    {
-        std::cout << "start numpochs " << i << std::endl;
-        //int32_t elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this] {
-        std::vector<int32_t> iRandVec;
-        randperm(train_x.rows(),iRandVec);
-        std::cout << "start batch: ";
-        for(int32_t j = 0; j < ibatchNum; ++j)
-        {
-            std::cout << " " << j;
-            //pull under network conditions
-            std::cout << "Need to pull weights!" << std::endl;
-            boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
-            pullReqMsg->sae_index() = sae_index;
-//                 boost::shared_lock<RWMutex> rlock(pFBNN->W_RWMutex);
-//                 set_m_oWs(pFBNN->get_m_oWs());
-//                 if(double_larger_than_zero(m_fMomentum))
-//                     set_m_oVWs(pFBNN->get_m_oVWs());
-//                 rlock.unlock();
-
-
-            int32_t curBatchSize = opts.batchsize;
-            if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
-                curBatchSize = train_x.rows() % opts.batchsize;
-            FMatrix batch_x(curBatchSize,train_x.columns());
-            for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
-                row(batch_x,r) = row(train_x,iRandVec[j * opts.batchsize + r]);
-
-            //Add noise to input (for use in denoising autoencoder)
-            if(m_fInputZeroMaskedFraction != 0)
-                batch_x = bitWiseMul(batch_x,(rand(curBatchSize,train_x.columns())>m_fInputZeroMaskedFraction));
-
-//             FMatrix batch_y(curBatchSize,train_y.columns());
-//             for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
-//                 row(batch_y,r) = row(train_y,iRandVec[j * opts.batchsize + r]);
-
-            L(i*ibatchNum+j,0) = nnff(batch_x,batch_x);
-            nnbp();
-            nnapplygrads();
-            //push under network conditions
-            std::cout << "Need to push weights!" << std::endl;
-//                 boost::unique_lock<RWMutex> wlock(pFBNN->W_RWMutex);
-//                 pFBNN->set_m_odWs(m_odWs);
-//                 pFBNN->nnapplygrads();
-//                 wlock.unlock();
-//            std::cout << "end batch " << j << std::endl;
-        }
-        std::cout << std::endl;
-        //});
-        //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
-        //loss calculate use nneval
-        nneval(loss, train_x, train_x);
-        std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
-        //std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
-        std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(L,i*ibatchNum,0UL,ibatchNum,L.columns())) << std::endl;
-        m_fLearningRate *= m_fScalingLearningRate;
-
-//        std::cout << "end numpochs " << i << std::endl;
-    }
-
-}
 }//end namespace ff
 
 using namespace ff;
@@ -197,11 +124,10 @@ int main(int argc, char* argv[])
 
     ffnet::NetNervureFromFile nnff("../confs/dl_worker_net_conf.ini");
     DLWorker worker(nnff,sae_config_file,input_data_file,server_ip,server_port);
-
-//     nnff.addNeedToRecvPkg<AckParaServerMsg>(boost::bind(&DLWorker::onRecvAck, &worker, _1, _2));
-//     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLWorker::onRecvSendFileDirAck, &master, _1, _2));
+    
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLWorker::onConnSucc, &worker, _1));
-
+//     nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
+    
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
     nnff.run();
     monitor_thrd.join();
