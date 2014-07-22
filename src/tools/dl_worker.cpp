@@ -50,7 +50,7 @@ public:
         FMatrix_ptr train_x = read_matrix_from_dir(m_str_inputfile);
         if(train_x == NULL)
             return false;
-        *train_x = *train_x / 255;
+        *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
         m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);
