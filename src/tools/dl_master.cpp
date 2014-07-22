@@ -67,16 +67,16 @@ public:
         }
         //Depart data into pieces based on slave number.
         //make the output dir
-        std::string output_dir;
-        if((output_dir = newDirAtCWD(globalDirStr)) == "")
-        {
-            std::cout << "Error when make output dir!" << std::endl;
-            return;
-        }
-        std::cout << "output DIR = " << output_dir << std::endl;
+//         std::string output_dir;
+//         if((output_dir = newDirAtCWD(globalDirStr)) == "")
+//         {
+//             std::cout << "Error when make output dir!" << std::endl;
+//             return;
+//         }
+//         std::cout << "output DIR = " << output_dir << std::endl;
 
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
-        divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),output_dir.c_str());
+        divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),".");
         m_p_sae = SAE_create(m_p_sae_nc);
 //         SAE_run(m_p_sae,output_dir,m_p_sae_nc);
 //         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
@@ -90,8 +90,8 @@ public:
         file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
         std::cout<<"path on slave "<<slave_path<<std::endl;
         //Send divided inputs
-        std::string data_dir = send_data_from_dir(static_cast<std::string>("./") +
-                               globalDirStr,pEP->address().to_string(),slave_path);
+        std::string data_dir = send_data_from_dir(".",pEP->address().to_string(),slave_path);
+        std::cout << "data dir = " << data_dir << std::endl;
         //Get dl_master server port & ip
         std::string server_addr = m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip");
         uint16_t server_port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
@@ -111,6 +111,7 @@ public:
     {
         std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
+        ackMsg->sae_index() = pMsg->sae_index();
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));

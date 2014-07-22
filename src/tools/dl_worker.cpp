@@ -50,18 +50,31 @@ public:
         FMatrix_ptr train_x = read_matrix_from_dir(m_str_inputfile);
         if(train_x == NULL)
             return false;
-        *train_x = (*train_x) / 255;
+        *train_x = *train_x / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
         m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);
         return true;
     }
-    
-//     void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP){
-//         std::cout << "Receive pull ack!" << std::endl; 
-//         for(int i = 0; i < pMsg->Ws().size(); ++i)
-//             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
-//     }
+
+    void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        std::cout << "Receive pull ack! Index = " << pMsg->sae_index() << std::endl;
+        for(int i = 0; i < pMsg->Ws().size(); ++i)
+            std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+    }
+
+    void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
+        boost::unique_lock<RWMutex> wlock((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_RWMutex);
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_push_ack(true);
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_cond_ack.notify_one();
+        wlock.unlock();
+    }
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
@@ -124,10 +137,11 @@ int main(int argc, char* argv[])
 
     ffnet::NetNervureFromFile nnff("../confs/dl_worker_net_conf.ini");
     DLWorker worker(nnff,sae_config_file,input_data_file,server_ip,server_port);
-    
+
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLWorker::onConnSucc, &worker, _1));
-//     nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
-    
+    nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
+    nnff.addNeedToRecvPkg<PushParaAck>(boost::bind(&DLWorker::onRecvPushAck, &worker, _1, _2));
+
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
     nnff.run();
     monitor_thrd.join();

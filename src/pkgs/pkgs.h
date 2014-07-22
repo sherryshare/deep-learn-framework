@@ -199,6 +199,7 @@ public:
     {
         if(ar.is_serializer() || ar.is_lengther())
         {
+            ar.archive(m_u_sae_index);
             int32_t len = m_oWs.size();
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
@@ -234,6 +235,7 @@ public:
         }
         if(ar.is_deserializer())
         {
+            ar.archive(m_u_sae_index);
             int32_t len;
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
@@ -270,6 +272,12 @@ public:
         }
     }
     
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
     const std::vector<FMatrix_ptr>& Ws() const {
         return m_oWs;
     };
@@ -285,6 +293,7 @@ public:
     
 
 protected:
+    int32_t m_u_sae_index;
     std::vector<FMatrix_ptr>  m_oWs;
     std::vector<FMatrix_ptr>  m_oVWs;
 };
@@ -365,8 +374,18 @@ public:
     PushParaAck()
         :Package(msg_push_para_ack)
     {}
-    virtual void archive(ffnet::Archive& ar) {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_u_sae_index);
+    }
+    
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
 protected:
+    int32_t m_u_sae_index;
 };
 
 }//end namespace ff

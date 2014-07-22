@@ -17,7 +17,7 @@ SAE::SAE(const Arch_t& arch,
         t[0] = arch[i-1];
         t[1] = arch[i];
         t[2] = arch[i-1];
-        m_oAEs.push_back(FBNN_ptr(new  FBNN(t,m_strActivationFunction,m_fLearningRate,m_fInputZeroMaskedFraction)));
+        m_oAEs.push_back(FBNN_ptr(new FBNN(t,m_strActivationFunction,m_fLearningRate,m_fInputZeroMaskedFraction)));
     }
     std::cout << "Finish initialize!" << std::endl;
 }

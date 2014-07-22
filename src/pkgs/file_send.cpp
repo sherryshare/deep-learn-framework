@@ -1,4 +1,5 @@
 #include "file_send.h"
+#include <utils/utils.h>
 
 
 namespace ff {
@@ -118,6 +119,22 @@ bool file_send(const std::string& input_file,
     src_file.close(); /* close the local file */
 
     curl_global_cleanup();
+
+    //cp to local dir
+    if(!ret) {
+        std::string output_dir;
+        if((output_dir = newDirAtCWD(globalDirStr)) == "")
+        {
+            std::cout << "Error when make output dir!" << std::endl;
+        }
+        else
+        {
+            std::string cmd = static_cast<std::string>("cp ") + input_file + " " + output_dir;
+            std::cout << cmd << std::endl;
+            system(cmd.c_str());
+            ret = true;
+        }
+    }
     return ret;
 }
 
@@ -137,7 +154,7 @@ const std::string send_data_from_dir(const std::string& input_dir, const std::st
             {
                 std::cout << "find input_file " << file_name << std::endl;
                 retStr = file_name;
-                file_name = input_dir + "/" + file_name;                
+                file_name = input_dir + "/" + file_name;
                 break;
             }
         }

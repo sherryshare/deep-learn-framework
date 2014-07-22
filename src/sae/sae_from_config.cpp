@@ -17,8 +17,8 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
     //Setup and train a stacked denoising autoencoder (SDAE)
     std::cout << "Pretrain an SAE" << std::endl;
     std::cout << "sae_arch = " << sae_arch << "numel(sae_arch) = " << numel(sae_arch) << std::endl;
-    SAE sae(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction);
-    return SAE_ptr(new SAE(sae));
+//     SAE sae(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction);
+    return SAE_ptr(new SAE(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction));
 }
 
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,

@@ -4,7 +4,7 @@ namespace ff {
 
 static FMatrix_ptr read_train_x(const std::string& input_file)
 {
-    FMatrix_ptr res;
+    FMatrix_ptr res = FMatrix_ptr((FMatrix*)NULL);
     mat_t *mat = NULL;
     mat = Mat_Open(input_file.c_str(), MAT_ACC_RDONLY);
 
@@ -48,7 +48,7 @@ static bool write_to_file(const std::string& output_file,const FMatrix_ptr& trai
 
 FMatrix_ptr read_matrix_from_file(const std::string& file_name)
 {
-    FMatrix_ptr res;
+    FMatrix_ptr res = FMatrix_ptr((FMatrix*)NULL);
     std::ifstream read_file(file_name.c_str());
     if(!read_file.is_open())
     {
@@ -77,10 +77,10 @@ FMatrix_ptr read_matrix_from_file(const std::string& file_name)
 
 FMatrix_ptr read_matrix_from_dir(const std::string& dir)//only read one .part file
 {
-    if(!is_dir(dir)){
-        return read_matrix_from_file(dir);
-    }
-    FMatrix_ptr res ; 
+    FMatrix_ptr res = FMatrix_ptr((FMatrix*)NULL);
+    if(!is_dir(dir) && (res = read_matrix_from_file(dir))){
+        return res;
+    }    
     std::string file_name;
     DIR* dirp;
     struct dirent* direntp;

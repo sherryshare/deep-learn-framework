@@ -10,6 +10,7 @@
 //mutex
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/condition.hpp>
 
 #include "pkgs/pkgs.h"
 
@@ -20,6 +21,7 @@ namespace ff
 class FBNN;
 typedef boost::shared_ptr<FBNN> FBNN_ptr;
 
+typedef boost::shared_mutex RWMutex;
 class FBNN {
 public:
     FBNN(const Arch_t& arch,
@@ -76,35 +78,50 @@ public:
         }
     };
 
-    void      train(const FMatrix& train_x,
-                    const Opts& opts,
-                    ffnet::NetNervureFromFile& ref_NNFF,
-                    const ffnet::EndpointPtr_t& pEP,
-                    const int32_t sae_index);
+    void train(const FMatrix& train_x,
+               const Opts& opts,
+               ffnet::NetNervureFromFile& ref_NNFF,
+               const ffnet::EndpointPtr_t& pEP,
+               const int32_t sae_index);
 
-    void      train(const FMatrix& train_x,
-                    const FMatrix& train_y,
-                    const Opts& opts,
-                    const FMatrix& valid_x,
-                    const FMatrix& valid_y);
+    void train_after_pull(const int32_t sae_index,
+                          ffnet::NetNervureFromFile& ref_NNFF,
+                          const ffnet::EndpointPtr_t& pEP
+                         );
+    void train_after_push(const int32_t sae_index,
+                          ffnet::NetNervureFromFile& ref_NNFF,
+                          const ffnet::EndpointPtr_t& pEP
+                         );
 
-    void      train(const FMatrix& train_x,
-                    const FMatrix& train_y ,
-                    const Opts& opts);
-    double    nnff(const FMatrix& x, const FMatrix& y);
-    void      nnbp(void);
-    void	nnapplygrads(void);
-    void	nneval(Loss& loss,
-                   const FMatrix& train_x,
-                   const FMatrix& train_y,
-                   const FMatrix& valid_x,
-                   const FMatrix& valid_y);
-    void	nneval(Loss& loss, const FMatrix& train_x, const FMatrix& train_y);
-    double	nntest(const FMatrix& x, const FMatrix& y);
-    void	nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
+    void train(const FMatrix& train_x,
+               const FMatrix& train_y,
+               const Opts& opts,
+               const FMatrix& valid_x,
+               const FMatrix& valid_y);
 
-    void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP);
-    void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP);
+    void train(const FMatrix& train_x,
+               const FMatrix& train_y ,
+               const Opts& opts);
+    double nnff(const FMatrix& x, const FMatrix& y);
+    void nnbp(void);
+    void nnapplygrads(void);
+    void nneval(Loss& loss,
+                const FMatrix& train_x,
+                const FMatrix& train_y,
+                const FMatrix& valid_x,
+                const FMatrix& valid_y);
+    void nneval(Loss& loss, const FMatrix& train_x, const FMatrix& train_y);
+    double nntest(const FMatrix& x, const FMatrix& y);
+    void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
+
+    const bool& get_push_ack(void)const {
+        return m_bPushAckReceived;
+    };
+    void set_push_ack(bool value) {
+        m_bPushAckReceived = value;
+    };
+    RWMutex m_g_RWMutex;//needed for parameter push ack
+    boost::condition m_cond_ack;
 
 protected:
 
@@ -134,6 +151,17 @@ protected:
 
     FMatrix_ptr  m_oLp;//Loss matrix
     FMatrix_ptr  m_oEp;//Error matrix
+
+
+    //members used in network version
+    int32_t m_iBatchNum;//Change only once
+    int32_t m_ivEpoch;//Change with loops
+    int32_t m_ivBatch;
+    std::vector<int32_t> m_oRandVec;
+    bool m_bPushAckReceived;//Used for asynchronous, default true
+    Loss m_oLoss;
+    FMatrix_ptr m_opTrain_x;
+    Opts m_sOpts;
 
 
 };//end class FBNN
