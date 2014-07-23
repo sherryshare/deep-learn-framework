@@ -213,7 +213,7 @@ public:
                     for(int32_t c = 0; c < column; ++c)
                         data[r*column + c] = m_oWs[i]->operator()(r,c);
                 }
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 delete data;
             }
             len = m_oVWs.size();
@@ -229,7 +229,7 @@ public:
                     for(int32_t c = 0; c < column; ++c)
                         data[r*column + c] = m_oVWs[i]->operator()(r,c);
                 }
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 delete data;
             }
         }
@@ -244,7 +244,7 @@ public:
                 ar.archive(row);
                 ar.archive(column);
                 double * data = new double[row*column];
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 FMatrix m(row,column);
                 for(int32_t r = 0; r < row; ++r){
                     for(int32_t c = 0; c < column; ++c)
@@ -260,7 +260,7 @@ public:
                 ar.archive(row);
                 ar.archive(column);
                 double * data = new double[row*column];
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 FMatrix m(row,column);
                 for(int32_t r = 0; r < row; ++r){
                     for(int32_t c = 0; c < column; ++c)
@@ -323,7 +323,7 @@ public:
                     for(int32_t c = 0; c < column; ++c)
                         data[r*column + c] = m_odWs[i]->operator()(r,c);
                 }
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 delete data;
             }            
         }
@@ -338,7 +338,7 @@ public:
                 ar.archive(row);
                 ar.archive(column);
                 double * data = new double[row*column];
-                ar.archive(*data); 
+                ar.archive(data, row*column); 
                 FMatrix m(row,column);
                 for(int32_t r = 0; r < row; ++r){
                     for(int32_t c = 0; c < column; ++c)
