@@ -182,11 +182,15 @@ public:
     virtual void archive(ffnet::Archive& ar)
     {
         ar.archive(m_u_sae_index);
-    }    
+    }
 
 protected:
     int32_t m_u_sae_index;
 };
+
+void serialize_FMatrix(ffnet::Archive& ar,const FMatrix_ptr& pMat);
+
+FMatrix_ptr deserialize_FMatrix(ffnet::Archive& ar);
 
 class PullParaAck: public ffnet::Package
 {
@@ -204,33 +208,35 @@ public:
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row = m_oWs[i]->rows();
-                int32_t column = m_oWs[i]->columns();
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        data[r*column + c] = m_oWs[i]->operator()(r,c);
-                }
-                ar.archive(data, row*column); 
-                delete data;
+                serialize_FMatrix(ar,m_oWs[i]);
+//                 int32_t row = m_oWs[i]->rows();
+//                 int32_t column = m_oWs[i]->columns();
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         data[r*column + c] = m_oWs[i]->operator()(r,c);
+//                 }
+//                 ar.archive(data, row*column);
+//                 delete data;
             }
             len = m_oVWs.size();
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row = m_oVWs[i]->rows();
-                int32_t column = m_oVWs[i]->columns();
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        data[r*column + c] = m_oVWs[i]->operator()(r,c);
-                }
-                ar.archive(data, row*column); 
-                delete data;
+                serialize_FMatrix(ar,m_oVWs[i]);
+//                 int32_t row = m_oVWs[i]->rows();
+//                 int32_t column = m_oVWs[i]->columns();
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         data[r*column + c] = m_oVWs[i]->operator()(r,c);
+//                 }
+//                 ar.archive(data, row*column);
+//                 delete data;
             }
         }
         if(ar.is_deserializer())
@@ -240,38 +246,39 @@ public:
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row,column;
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                ar.archive(data, row*column); 
-                FMatrix m(row,column);
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        m(r,c) = data[r*column + c];
-                }      
-                delete data;             
-                m_oWs.push_back(FMatrix_ptr(new FMatrix(m)));
+//                 int32_t row,column;
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 ar.archive(data, row*column);
+//                 FMatrix m(row,column);
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         m(r,c) = data[r*column + c];
+//                 }
+//                 delete data;
+                m_oWs.push_back(deserialize_FMatrix(ar));
             }
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row,column;
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                ar.archive(data, row*column); 
-                FMatrix m(row,column);
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        m(r,c) = data[r*column + c];
-                }                
-                delete data;  
-                m_oVWs.push_back(FMatrix_ptr(new FMatrix(m)));
+//                 int32_t row,column;
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 ar.archive(data, row*column);
+//                 FMatrix m(row,column);
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         m(r,c) = data[r*column + c];
+//                 }
+//                 delete data;
+//                 m_oVWs.push_back(FMatrix_ptr(new FMatrix(m)));
+                m_oVWs.push_back(deserialize_FMatrix(ar));
             }
         }
     }
-    
+
     int32_t& sae_index() {
         return m_u_sae_index;
     }
@@ -290,7 +297,7 @@ public:
     std::vector<FMatrix_ptr>& VWs() {
         return m_oVWs;
     };
-    
+
 
 protected:
     int32_t m_u_sae_index;
@@ -314,18 +321,19 @@ public:
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row = m_odWs[i]->rows();
-                int32_t column = m_odWs[i]->columns();
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        data[r*column + c] = m_odWs[i]->operator()(r,c);
-                }
-                ar.archive(data, row*column); 
-                delete data;
-            }            
+//                 int32_t row = m_odWs[i]->rows();
+//                 int32_t column = m_odWs[i]->columns();
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         data[r*column + c] = m_odWs[i]->operator()(r,c);
+//                 }
+//                 ar.archive(data, row*column);
+//                 delete data;
+                serialize_FMatrix(ar,m_odWs[i]);
+            }
         }
         if(ar.is_deserializer())
         {
@@ -334,22 +342,23 @@ public:
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                int32_t row,column;
-                ar.archive(row);
-                ar.archive(column);
-                double * data = new double[row*column];
-                ar.archive(data, row*column); 
-                FMatrix m(row,column);
-                for(int32_t r = 0; r < row; ++r){
-                    for(int32_t c = 0; c < column; ++c)
-                        m(r,c) = data[r*column + c];
-                }      
-                delete data;             
-                m_odWs.push_back(FMatrix_ptr(new FMatrix(m)));
-            }            
+//                 int32_t row,column;
+//                 ar.archive(row);
+//                 ar.archive(column);
+//                 double * data = new double[row*column];
+//                 ar.archive(data, row*column);
+//                 FMatrix m(row,column);
+//                 for(int32_t r = 0; r < row; ++r) {
+//                     for(int32_t c = 0; c < column; ++c)
+//                         m(r,c) = data[r*column + c];
+//                 }
+//                 delete data;
+//                 m_odWs.push_back(FMatrix_ptr(new FMatrix(m)));
+                m_odWs.push_back(deserialize_FMatrix(ar));
+            }
         }
     }
-    
+
     int32_t& sae_index() {
         return m_u_sae_index;
     }
@@ -361,11 +370,11 @@ public:
     };
     std::vector<FMatrix_ptr>& dWs() {
         return m_odWs;
-    }; 
-        
+    };
+
 protected:
     int32_t m_u_sae_index;
-    std::vector<FMatrix_ptr>  m_odWs;    
+    std::vector<FMatrix_ptr>  m_odWs;
 };
 
 class PushParaAck : public ffnet::Package
@@ -377,7 +386,7 @@ public:
     virtual void archive(ffnet::Archive& ar) {
         ar.archive(m_u_sae_index);
     }
-    
+
     int32_t& sae_index() {
         return m_u_sae_index;
     }

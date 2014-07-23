@@ -18,6 +18,7 @@ set(cmn_src src/pkgs/ack_nodes.cpp
     src/pkgs/heart_beat.cpp
     src/pkgs/req_nodes.cpp
     src/pkgs/file_send.cpp
+    src/pkgs/pkgs.cpp
     src/utils/utils.cpp
   )
   
