@@ -120,8 +120,10 @@ public:
     void set_push_ack(bool value) {
         m_bPushAckReceived = value;
     };
-    RWMutex m_g_RWMutex;//needed for parameter push ack
+    RWMutex m_g_condMutex;//needed for parameter push ack
     boost::condition m_cond_ack;
+    RWMutex m_g_odWsMutex;
+    RWMutex m_g_oWsMutex;
 
 protected:
 

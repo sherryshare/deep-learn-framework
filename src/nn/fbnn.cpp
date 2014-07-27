@@ -134,7 +134,7 @@ void FBNN::train(const FMatrix& train_x,
     m_ivBatch = 0;
     std::cout << " " << m_ivBatch << std::endl;
     //wait push ack then pull
-    boost::shared_lock<RWMutex> rlock(m_g_RWMutex);
+    boost::shared_lock<RWMutex> rlock(m_g_condMutex);
     while (!m_bPushAckReceived) {
         m_cond_ack.wait(rlock);
         std::cout << "Wait push ack!" << std::endl;
@@ -170,7 +170,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     //push under network conditions
     std::cout << "Need to push weights!" << std::endl;
     //set push ack false
-    boost::unique_lock<RWMutex> wlock(m_g_RWMutex);
+    boost::unique_lock<RWMutex> wlock(m_g_condMutex);
     set_push_ack(false);
     m_cond_ack.notify_one();
     wlock.unlock();
@@ -191,7 +191,7 @@ void FBNN::train_after_push(const int32_t sae_index,
     if(m_ivBatch < m_iBatchNum) {
         std::cout << " " << m_ivBatch << std::endl;
         //wait push ack then pull
-        boost::shared_lock<RWMutex> rlock(m_g_RWMutex);
+        boost::shared_lock<RWMutex> rlock(m_g_condMutex);
         while (!m_bPushAckReceived) {
             m_cond_ack.wait(rlock);
             std::cout << "Wait push ack!" << std::endl;
