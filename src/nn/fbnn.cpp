@@ -124,6 +124,7 @@ void FBNN::train(const FMatrix& train_x,
 //     boost::unique_lock<RWMutex> wlock(m_g_endMutex);
 //     m_bEndTrain = false;
 //     m_cond_endTrain.notify_one();
+//     std::cout << "m_bEndTrain = " << m_bEndTrain << std::endl;
 //     wlock.unlock();
     m_opTrain_x = FMatrix_ptr(new FMatrix(train_x));// Copy and store train_x
     m_sOpts = opts;
