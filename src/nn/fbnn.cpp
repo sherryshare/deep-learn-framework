@@ -188,7 +188,7 @@ void FBNN::train_after_push(const int32_t sae_index,
                             const ffnet::EndpointPtr_t& pEP
                            )
 {
-    if(m_ivBatch < m_iBatchNum) {
+    if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
         std::cout << " " << m_ivBatch << std::endl;
         //wait push ack then pull
         boost::shared_lock<RWMutex> rlock(m_g_condMutex);
@@ -223,6 +223,12 @@ void FBNN::train_after_push(const int32_t sae_index,
     }
     else {
         std::cout << "End training!" << std::endl;
+        boost::shared_lock<RWMutex> rlock(m_g_condMutex);
+        while (!m_bPushAckReceived) {
+            m_cond_ack.wait(rlock);
+            std::cout << "Wait last push ack!" << std::endl;
+        }
+        rlock.unlock();        
     }
 }
 
