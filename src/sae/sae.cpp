@@ -32,6 +32,12 @@ void SAE::SAETrain(const FMatrix& train_x, const Opts& opts)
         std::cout << "Training AE " << i+1 << " / " << num_ae << ", ";
         std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
         m_oAEs[i]->train(x, x, opts);
+        boost::shared_lock<RWMutex> rlock(m_oAEs[i]->m_g_endMutex);
+        while (!(m_oAEs[i]->get_end_train())) {
+            m_oAEs[i]->m_cond_endTrain.wait(rlock);
+            std::cout << "Wait end train!" << std::endl;
+        }
+        rlock.unlock();        
         m_oAEs[i]->nnff(x, x);
         x = *(m_oAEs[i]->get_m_oAs())[1];
         x = delPreColumn(x);

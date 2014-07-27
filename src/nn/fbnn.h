@@ -120,8 +120,18 @@ public:
     void set_push_ack(bool value) {
         m_bPushAckReceived = value;
     };
-    RWMutex m_g_condMutex;//needed for parameter push ack
+    
+    const bool& get_end_train(void)const {
+        return m_bEndTrain;
+    };
+//     void set_end_train(bool value) {
+//         m_bEndTrain = value;
+//     };
+    
+    RWMutex m_g_ackMutex;//needed for parameter push ack
     boost::condition m_cond_ack;
+    RWMutex m_g_endMutex;
+    boost::condition m_cond_endTrain;
     RWMutex m_g_odWsMutex;
     RWMutex m_g_oWsMutex;
 
@@ -161,6 +171,7 @@ protected:
     int32_t m_ivBatch;
     std::vector<int32_t> m_oRandVec;
     bool m_bPushAckReceived;//Used for asynchronous, default true
+    bool m_bEndTrain;
     Loss m_oLoss;
     FMatrix_ptr m_opTrain_x;
     Opts m_sOpts;

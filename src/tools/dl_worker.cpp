@@ -70,7 +70,7 @@ public:
     void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
-        boost::unique_lock<RWMutex> wlock((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_condMutex);
+        boost::unique_lock<RWMutex> wlock((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_ackMutex);
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_push_ack(true);
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_cond_ack.notify_one();
         wlock.unlock();
