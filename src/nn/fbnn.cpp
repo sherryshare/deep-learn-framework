@@ -120,7 +120,7 @@ void FBNN::train(const FMatrix& train_x,
                  const ffnet::EndpointPtr_t& pEP,
                  const int32_t sae_index)
 {
-       //Mark m_bEndTrain true: no need! Default false! Wouldn't repeat train!
+    //Mark m_bEndTrain true: no need! Default false! Wouldn't repeat train!
 //     boost::unique_lock<RWMutex> wlock(m_g_endMutex);
 //     m_bEndTrain = false;
 //     m_cond_endTrain.notify_one();
@@ -153,6 +153,7 @@ void FBNN::train(const FMatrix& train_x,
     boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
     pullReqMsg->sae_index() = sae_index;
     ref_NNFF.send(pullReqMsg,pEP);
+    train_after_pull(sae_index,ref_NNFF,pEP);
 }
 
 void FBNN::train_after_pull(const int32_t sae_index,
@@ -164,6 +165,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     int32_t curBatchSize = m_sOpts.batchsize;
     if(m_ivBatch == m_iBatchNum - 1 && m_opTrain_x->rows() % m_sOpts.batchsize != 0)
         curBatchSize = m_opTrain_x->rows() % m_sOpts.batchsize;
+    std::cout << "Current batch size = " << curBatchSize << std::endl;
     FMatrix batch_x(curBatchSize,m_opTrain_x->columns());
     for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
         row(batch_x,r) = row(*m_opTrain_x,m_oRandVec[m_ivBatch * m_sOpts.batchsize + r]);
@@ -222,11 +224,14 @@ void FBNN::train_after_push(const int32_t sae_index,
         m_fLearningRate *= m_fScalingLearningRate;
         std::cout << "end numpochs " << m_ivEpoch << std::endl;
         ++m_ivEpoch;
-        m_ivBatch = 0;//reset for next epoch loop
-        std::cout << "start numpochs " << m_ivEpoch << std::endl;
-        //int32_t elapsedTime...
-        randperm(m_opTrain_x->rows(),m_oRandVec);
-        std::cout << "start batch: ";
+        if(m_ivEpoch < m_sOpts.numpochs)
+        {
+            m_ivBatch = 0;//reset for next epoch loop
+            std::cout << "start numpochs " << m_ivEpoch << std::endl;
+            //int32_t elapsedTime...
+            randperm(m_opTrain_x->rows(),m_oRandVec);
+            std::cout << "start batch: ";            
+        }
         train_after_push(sae_index,ref_NNFF,pEP);
     }
     else {
