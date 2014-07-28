@@ -130,8 +130,6 @@ void FBNN::train(const FMatrix& train_x,
     m_sOpts = opts;
     m_iBatchNum = m_opTrain_x->rows() / m_sOpts.batchsize + (m_opTrain_x->rows() % m_sOpts.batchsize != 0);
     std::cout << "Total batch num = " << m_iBatchNum << std::endl;
-//     FMatrix L = zeros(m_sOpts.numpochs * m_iBatchNum, 1);
-//     m_oLp = FMatrix_ptr(new FMatrix(L));
     m_oLp = FMatrix_ptr(new FMatrix(m_sOpts.numpochs * m_iBatchNum, 1));
 //       std::cout << "numpochs = " << m_sOpts.numpochs << std::endl;
     m_ivEpoch = 0;
@@ -153,7 +151,7 @@ void FBNN::train(const FMatrix& train_x,
     boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
     pullReqMsg->sae_index() = sae_index;
     ref_NNFF.send(pullReqMsg,pEP);
-    train_after_pull(sae_index,ref_NNFF,pEP);
+//     train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
 }
 
 void FBNN::train_after_pull(const int32_t sae_index,
@@ -169,7 +167,6 @@ void FBNN::train_after_pull(const int32_t sae_index,
     FMatrix batch_x(curBatchSize,m_opTrain_x->columns());
     for(int32_t r = 0; r < curBatchSize; ++r)//randperm()
         row(batch_x,r) = row(*m_opTrain_x,m_oRandVec[m_ivBatch * m_sOpts.batchsize + r]);
-
     //Add noise to input (for use in denoising autoencoder)
     if(m_fInputZeroMaskedFraction != 0)
         batch_x = bitWiseMul(batch_x,(rand(curBatchSize,m_opTrain_x->columns())>m_fInputZeroMaskedFraction));
@@ -212,6 +209,7 @@ void FBNN::train_after_push(const int32_t sae_index,
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
         pullReqMsg->sae_index() = sae_index;
         ref_NNFF.send(pullReqMsg,pEP);
+//         train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
     }
     else if(m_ivEpoch < m_sOpts.numpochs) {
 //         std::cout << std::endl;

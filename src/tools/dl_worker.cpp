@@ -53,7 +53,8 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);
+        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);//local version - without req and ack, test right!
+//         m_p_sae->SAETrain(*train_x,opts);//test ok
         return true;
     }
 
