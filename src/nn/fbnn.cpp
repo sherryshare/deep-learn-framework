@@ -202,8 +202,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
-        pullReqMsg->sae_index() = sae_index;RWMutex m_g_endMutex;
-    boost::condition m_cond_endTrain;
+        pullReqMsg->sae_index() = sae_index; 
         ref_NNFF.send(pullReqMsg,pEP);
 //         train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28        
     }
