@@ -41,7 +41,9 @@ public:
                 it->port() == m_u_server_port) {
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
+            std::cout << "Start SAE_run:" << std::endl;
             SAE_run();
+            std::cout << "End SAE_run." << std::endl;
         }
     }
 
@@ -53,8 +55,10 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
+        std::cout << "Start SAETrain:" << std::endl;
         m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);//local version - without req and ack, test right!
 //         m_p_sae->SAETrain(*train_x,opts);//test ok
+        std::cout << "End SAETrain." << std::endl;
         return true;
     }
 
@@ -65,7 +69,9 @@ public:
             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
-        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+        bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+        if(b_AEIsEnd)
+            m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster);
     }
 
     void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)

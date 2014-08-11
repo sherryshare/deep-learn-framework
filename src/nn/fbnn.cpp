@@ -23,7 +23,7 @@ FBNN::FBNN(const Arch_t& arch,
     , m_fTesting(testing)
     , m_strOutput(outputStr)
     , m_bPushAckReceived(true)//Used in parameter push
-    , m_bEndTrain(false)
+//     , m_bEndTrain(false)
 {
     for(int32_t i = 1; i < m_iN; ++i)
     {
@@ -120,12 +120,6 @@ void FBNN::train(const FMatrix& train_x,
                  const ffnet::EndpointPtr_t& pEP,
                  const int32_t sae_index)
 {
-    //Mark m_bEndTrain true: no need! Default false! Wouldn't repeat train!
-//     boost::unique_lock<RWMutex> wlock(m_g_endMutex);
-//     m_bEndTrain = false;
-//     m_cond_endTrain.notify_one();
-//     std::cout << "m_bEndTrain = " << m_bEndTrain << std::endl;
-//     wlock.unlock();
     m_opTrain_x = FMatrix_ptr(new FMatrix(train_x));// Copy and store train_x
     m_sOpts = opts;
     m_iBatchNum = m_opTrain_x->rows() / m_sOpts.batchsize + (m_opTrain_x->rows() % m_sOpts.batchsize != 0);
@@ -154,7 +148,7 @@ void FBNN::train(const FMatrix& train_x,
 //     train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
 }
 
-void FBNN::train_after_pull(const int32_t sae_index,
+bool FBNN::train_after_pull(const int32_t sae_index,
                             ffnet::NetNervureFromFile& ref_NNFF,
                             const ffnet::EndpointPtr_t& pEP
                            )
@@ -187,14 +181,15 @@ void FBNN::train_after_pull(const int32_t sae_index,
     pushReqMsg->sae_index() = sae_index;
     ref_NNFF.send(pushReqMsg,pEP);
     ++m_ivBatch;
-    train_after_push(sae_index,ref_NNFF,pEP);
+    return train_after_push(sae_index,ref_NNFF,pEP);
 }
 
-void FBNN::train_after_push(const int32_t sae_index,
+bool FBNN::train_after_push(const int32_t sae_index,
                             ffnet::NetNervureFromFile& ref_NNFF,
                             const ffnet::EndpointPtr_t& pEP
                            )
 {
+    bool retVal = false;
     if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
         std::cout << " " << m_ivBatch << std::endl;
         //wait push ack then pull
@@ -207,9 +202,10 @@ void FBNN::train_after_push(const int32_t sae_index,
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
-        pullReqMsg->sae_index() = sae_index;
+        pullReqMsg->sae_index() = sae_index;RWMutex m_g_endMutex;
+    boost::condition m_cond_endTrain;
         ref_NNFF.send(pullReqMsg,pEP);
-//         train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
+//         train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28        
     }
     else if(m_ivEpoch < m_sOpts.numpochs) {
 //         std::cout << std::endl;
@@ -230,7 +226,7 @@ void FBNN::train_after_push(const int32_t sae_index,
             randperm(m_opTrain_x->rows(),m_oRandVec);
             std::cout << "start batch: ";            
         }
-        train_after_push(sae_index,ref_NNFF,pEP);
+        retVal = train_after_push(sae_index,ref_NNFF,pEP);        
     }
     else {
         boost::shared_lock<RWMutex> rlock(m_g_ackMutex);
@@ -240,11 +236,13 @@ void FBNN::train_after_push(const int32_t sae_index,
         }
         rlock.unlock();
         std::cout << "End fbnn training!" << std::endl;
-        boost::unique_lock<RWMutex> wlock(m_g_endMutex);// Mark m_bEndTrain true
-        m_bEndTrain = true;
-        m_cond_endTrain.notify_one();
-        wlock.unlock();
+//         boost::unique_lock<RWMutex> wlock(m_g_endMutex);// Mark m_bEndTrain true
+//         m_bEndTrain = true;
+//         m_cond_endTrain.notify_one();
+//         wlock.unlock();
+        retVal = true;
     }
+    return retVal;
 }
 
 //NNFF performs a feedforward pass

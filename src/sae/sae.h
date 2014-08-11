@@ -18,13 +18,16 @@ public:
         const std::string& activationFunction = "sigm",
         const double learningRate = 1,
         const double inputZeroMaskedFraction = 0.5);
-    void    SAETrain(const FMatrix& train_x,
+    void SAETrain(const FMatrix& train_x,
                      const Opts& opts);
-    void    SAETrain(const FMatrix& train_x,
+    void SAETrain(const FMatrix& train_x,
                      const Opts& opts,
                      ffnet::NetNervureFromFile& ref_NNFF,
                      const ffnet::EndpointPtr_t& pEP
                     );
+    
+    void train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
+                   const ffnet::EndpointPtr_t& pEP);
     const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
         return m_oAEs;
     };
@@ -34,6 +37,13 @@ protected:
     const std::string    m_strActivationFunction;
     double          m_fLearningRate;
     const double          m_fInputZeroMaskedFraction;
+    
+    //members used in network version
+    int m_iAEIndex;
+    FMatrix_ptr m_pTrain_x;
+    Opts m_sOpts;
+    
+    
 };//end class SAE
 
 }//end namespace ff
