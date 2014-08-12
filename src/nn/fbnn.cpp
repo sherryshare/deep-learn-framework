@@ -22,8 +22,6 @@ FBNN::FBNN(const Arch_t& arch,
     , m_fInputZeroMaskedFraction(zeroMaskedFraction)
     , m_fTesting(testing)
     , m_strOutput(outputStr)
-    , m_bPushAckReceived(true)//Used in parameter push
-//     , m_bEndTrain(false)
 {
     for(int32_t i = 1; i < m_iN; ++i)
     {
@@ -130,16 +128,9 @@ void FBNN::train(const FMatrix& train_x,
     std::cout << "start numpochs " << m_ivEpoch << std::endl;
     //int32_t elapsedTime...
     randperm(m_opTrain_x->rows(),m_oRandVec);
-    std::cout << "start batch: ";
+//     std::cout << "start batch: ";
     m_ivBatch = 0;
-    std::cout << " " << m_ivBatch << std::endl;
-    //wait push ack then pull: no need! Default true
-//     boost::shared_lock<RWMutex> rlock(m_g_ackMutex);
-//     while (!m_bPushAckReceived) {
-//         m_cond_ack.wait(rlock);
-//         std::cout << "Wait push ack!" << std::endl;
-//     }
-//     rlock.unlock();
+    std::cout << "start batch: " << m_ivBatch << std::endl;
     //pull under network conditions
     std::cout << "Need to pull weights!" << std::endl;
     boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
@@ -148,7 +139,7 @@ void FBNN::train(const FMatrix& train_x,
 //     train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
 }
 
-bool FBNN::train_after_pull(const int32_t sae_index,
+void FBNN::train_after_pull(const int32_t sae_index,
                             ffnet::NetNervureFromFile& ref_NNFF,
                             const ffnet::EndpointPtr_t& pEP
                            )
@@ -170,18 +161,13 @@ bool FBNN::train_after_pull(const int32_t sae_index,
     nnapplygrads();
     //push under network conditions
     std::cout << "Need to push weights!" << std::endl;
-    //set push ack false
-    boost::unique_lock<RWMutex> wlock(m_g_ackMutex);
-    set_push_ack(false);
-    m_cond_ack.notify_one();
-    wlock.unlock();
     //set push package
     boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
     copy(get_m_odWs().begin(),get_m_odWs().end(),std::back_inserter(pushReqMsg->dWs()));
     pushReqMsg->sae_index() = sae_index;
     ref_NNFF.send(pushReqMsg,pEP);
     ++m_ivBatch;
-    return train_after_push(sae_index,ref_NNFF,pEP);
+//     train_after_push(sae_index,ref_NNFF,pEP);
 }
 
 bool FBNN::train_after_push(const int32_t sae_index,
@@ -191,14 +177,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
 {
     bool retVal = false;
     if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
-        std::cout << " " << m_ivBatch << std::endl;
-        //wait push ack then pull
-        boost::shared_lock<RWMutex> rlock(m_g_ackMutex);
-        while (!m_bPushAckReceived) {
-            m_cond_ack.wait(rlock);
-            std::cout << "Wait push ack!" << std::endl;
-        }
-        rlock.unlock();
+        std::cout << "start batch: " << m_ivBatch << std::endl;     
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
@@ -223,22 +202,12 @@ bool FBNN::train_after_push(const int32_t sae_index,
             std::cout << "start numpochs " << m_ivEpoch << std::endl;
             //int32_t elapsedTime...
             randperm(m_opTrain_x->rows(),m_oRandVec);
-            std::cout << "start batch: ";            
+//             std::cout << "start batch: ";            
         }
         retVal = train_after_push(sae_index,ref_NNFF,pEP);        
     }
     else {
-        boost::shared_lock<RWMutex> rlock(m_g_ackMutex);
-        while (!m_bPushAckReceived) {
-            m_cond_ack.wait(rlock);
-            std::cout << "Wait last push ack!" << std::endl;
-        }
-        rlock.unlock();
         std::cout << "End fbnn training!" << std::endl;
-//         boost::unique_lock<RWMutex> wlock(m_g_endMutex);// Mark m_bEndTrain true
-//         m_bEndTrain = true;
-//         m_cond_endTrain.notify_one();
-//         wlock.unlock();
         retVal = true;
     }
     return retVal;

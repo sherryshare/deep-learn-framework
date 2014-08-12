@@ -9,14 +9,15 @@ void serialize_FMatrix(ffnet::Archive& ar,const FMatrix_ptr& pMat)
     ar.archive(column);
     double * data = new double[row*column];
     for(int32_t r = 0; r < row; ++r) {
-        for(int32_t c = 0; c < column; ++c)
+        for(int32_t c = 0; c < column; ++c){
             data[r*column + c] = pMat->operator()(r,c);
-    }
+        }
+    }       
     ar.archive(data, row*column);
     delete data;
 }
 
-FMatrix_ptr deserialize_FMatrix(ffnet::Archive& ar)
+FMatrix deserialize_FMatrix(ffnet::Archive& ar)
 {
     int32_t row,column;
     ar.archive(row);
@@ -29,7 +30,7 @@ FMatrix_ptr deserialize_FMatrix(ffnet::Archive& ar)
             m(r,c) = data[r*column + c];
     }
     delete data;
-    return FMatrix_ptr(new FMatrix(m));
+    return m;
 }
 
 }//end namespace ff

@@ -41,9 +41,7 @@ public:
                 it->port() == m_u_server_port) {
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
-            std::cout << "Start SAE_run:" << std::endl;
             SAE_run();
-            std::cout << "End SAE_run." << std::endl;
         }
     }
 
@@ -55,10 +53,8 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        std::cout << "Start SAETrain:" << std::endl;
         m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);//local version - without req and ack, test right!
 //         m_p_sae->SAETrain(*train_x,opts);//test ok
-        std::cout << "End SAETrain." << std::endl;
         return true;
     }
 
@@ -69,18 +65,20 @@ public:
             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
-        bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
-        if(b_AEIsEnd)
-            m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster);
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
     }
 
     void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
-        boost::unique_lock<RWMutex> wlock((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_ackMutex);
-        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_push_ack(true);
-        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_cond_ack.notify_one();
-        wlock.unlock();
+        bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_push(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+        bool b_SAEIsEnd;
+        if(b_AEIsEnd)
+            b_SAEIsEnd = m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster);
+        if(b_SAEIsEnd){
+            m_oNNFF.stop();
+            std::cout<<"Leaving dl_worker..."<<std::endl;
+        }
     }
 
 protected:
@@ -98,13 +96,13 @@ protected:
 }//end namespace ff
 
 using namespace ff;
-void  press_and_stop(ffnet::NetNervureFromFile& nnff)
-{
-    std::cout<<"Press any key to quit..."<<std::endl;
-    getc(stdin);
-    nnff.stop();
-    std::cout<<"Stopping, please wait..."<<std::endl;
-}
+// void  press_and_stop(ffnet::NetNervureFromFile& nnff)
+// {
+//     std::cout<<"Press any key to quit..."<<std::endl;
+//     getc(stdin);
+//     nnff.stop();
+//     std::cout<<"Stopping, please wait..."<<std::endl;
+// }
 
 int main(int argc, char* argv[])
 {
@@ -149,8 +147,8 @@ int main(int argc, char* argv[])
     nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
     nnff.addNeedToRecvPkg<PushParaAck>(boost::bind(&DLWorker::onRecvPushAck, &worker, _1, _2));
 
-    boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
+//     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
     nnff.run();
-    monitor_thrd.join();
+//     monitor_thrd.join();
     return 0;
 }

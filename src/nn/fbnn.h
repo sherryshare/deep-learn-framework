@@ -84,7 +84,7 @@ public:
                const ffnet::EndpointPtr_t& pEP,
                const int32_t sae_index);
 
-    bool train_after_pull(const int32_t sae_index,
+    void train_after_pull(const int32_t sae_index,
                           ffnet::NetNervureFromFile& ref_NNFF,
                           const ffnet::EndpointPtr_t& pEP
                          );
@@ -114,24 +114,6 @@ public:
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    const bool& get_push_ack(void)const {
-        return m_bPushAckReceived;
-    };
-    void set_push_ack(bool value) {
-        m_bPushAckReceived = value;
-    };
-    
-//     const bool& get_end_train(void)const {
-//         return m_bEndTrain;
-//     };
-//     void set_end_train(bool value) {
-//         m_bEndTrain = value;
-//     };
-    
-    RWMutex m_g_ackMutex;//needed for parameter push ack
-    boost::condition m_cond_ack;
-//     RWMutex m_g_endMutex;
-//     boost::condition m_cond_endTrain;
     RWMutex m_g_odWsMutex;
     RWMutex m_g_oWsMutex;
 
@@ -170,12 +152,9 @@ protected:
     int32_t m_ivEpoch;//Change with loops
     int32_t m_ivBatch;
     std::vector<int32_t> m_oRandVec;
-    bool m_bPushAckReceived;//Used for asynchronous, default true
-//     bool m_bEndTrain;
     Loss m_oLoss;
     FMatrix_ptr m_opTrain_x;
     Opts m_sOpts;
-
 
 };//end class FBNN
 //   typedef std::shared_ptr<FBNN> FBNN_ptr;

@@ -39,32 +39,6 @@ void SAE::SAETrain(const FMatrix& train_x, const Opts& opts)
     std::cout << "End training SAE." << std::endl;
 }
 
-// void SAE::SAETrain(const FMatrix& train_x,
-//                    const Opts& opts,
-//                    ffnet::NetNervureFromFile& ref_NNFF,
-//                    const ffnet::EndpointPtr_t& pEP)
-// {
-//     std::cout << "Start training SAE." << std::endl;
-//     size_t num_ae = m_oAEs.size();
-//     FMatrix x = train_x;
-//     for( size_t i = 0; i < num_ae; ++i)
-//     {
-//         std::cout << "Training AE " << i+1 << " / " << num_ae << ", ";
-//         std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
-//         m_oAEs[i]->train(x, opts, ref_NNFF, pEP, i);
-//         boost::shared_lock<RWMutex> rlock(m_oAEs[i]->m_g_endMutex);
-//         while (!(m_oAEs[i]->get_end_train())) {
-//             m_oAEs[i]->m_cond_endTrain.wait(rlock);
-//             std::cout << "Wait end train!" << std::endl;
-//         }
-//         rlock.unlock();
-//         m_oAEs[i]->nnff(x, x);
-//         x = *(m_oAEs[i]->get_m_oAs())[1];
-//         x = delPreColumn(x);
-//     }
-//     std::cout << "End training SAE." << std::endl;
-// }
-
 void SAE::SAETrain(const FMatrix& train_x,
                    const Opts& opts,
                    ffnet::NetNervureFromFile& ref_NNFF,
@@ -79,10 +53,10 @@ void SAE::SAETrain(const FMatrix& train_x,
     m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex);
 }
 
-void SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
+bool SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
                              const ffnet::EndpointPtr_t& pEP)
 {
-    std::cout << "Start train_after_end_AE:" << std::endl;
+//     std::cout << "Start train_after_end_AE:" << std::endl;
     m_oAEs[m_iAEIndex]->nnff(*m_pTrain_x, *m_pTrain_x);
     m_pTrain_x = (m_oAEs[m_iAEIndex]->get_m_oAs())[1];
     m_pTrain_x = FMatrix_ptr(new FMatrix(delPreColumn(*m_pTrain_x)));
@@ -92,12 +66,15 @@ void SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
         std::cout << "Training AE " << m_iAEIndex+1 << " / " << m_oAEs.size() << ", ";
         std::cout << "x = (" << m_pTrain_x->rows() << ", " << m_pTrain_x->columns() << ")"<< std::endl;
         m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex);
+//         std::cout << "End train_after_end_AE." << std::endl;
     }
     else
     {
+//         std::cout << "End train_after_end_AE." << std::endl;
         std::cout << "End training SAE." << std::endl;
+        return true;
     }
-    std::cout << "End train_after_end_AE." << std::endl;
+    return false;    
 }
 
 

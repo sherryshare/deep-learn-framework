@@ -112,15 +112,12 @@ public:
         std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
-        //require read lock for oWs and oVWs
-        boost::shared_lock<RWMutex> rlock_oWs((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_oWsMutex);
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
         std::cout << "size = " << ackMsg->Ws().size() << std::endl;
         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
         std::cout << "size = " << ackMsg->VWs().size() << std::endl;
-        rlock_oWs.unlock();
         for(int i = 0; i < ackMsg->Ws().size(); ++i)
             std::cout << ackMsg->Ws()[i]->operator()(0,0) << std::endl;
         m_oNNFF.send(ackMsg,pEP);
@@ -128,19 +125,17 @@ public:
 
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
-        std::cout << "Receive push request!"  << std::endl;
+        std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
         //set odWs
-        boost::unique_lock<RWMutex> wlock_odWs((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_odWsMutex);
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_odWs(pMsg->dWs());
         //nnapplygrads
-        boost::unique_lock<RWMutex> wlock_oWs((m_p_sae->get_m_oAEs()[pMsg->sae_index()])->m_g_oWsMutex);
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
-        wlock_oWs.unlock();
-        wlock_odWs.unlock();//write oWs immediately after write odWs, in case odWs would be changed before applied.
         for(int i = 0; i < pMsg->dWs().size(); ++i)
             std::cout << pMsg->dWs()[i]->operator()(0,0) << std::endl;
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
+        ackMsg->sae_index() = pMsg->sae_index();
         m_oNNFF.send(ackMsg,pEP);
+        std::cout << "Send push ack!" << std::endl;
     }
 
 protected:

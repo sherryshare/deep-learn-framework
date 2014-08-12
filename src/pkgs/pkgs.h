@@ -190,13 +190,15 @@ protected:
 
 void serialize_FMatrix(ffnet::Archive& ar,const FMatrix_ptr& pMat);
 
-FMatrix_ptr deserialize_FMatrix(ffnet::Archive& ar);
+FMatrix deserialize_FMatrix(ffnet::Archive& ar);
 
+typedef boost::shared_ptr<double> double_ptr;
 class PullParaAck: public ffnet::Package
 {
 public:
     PullParaAck()
         : Package(msg_pull_para_ack)
+        , m_u_sae_index(0)
     {}
 
     virtual void archive(ffnet::Archive& ar)
@@ -215,22 +217,22 @@ public:
             for(int32_t i = 0; i < len; ++i)
             {
                 serialize_FMatrix(ar,m_oVWs[i]);
-            }
+            }            
         }
         if(ar.is_deserializer())
-        {
+        {     
             ar.archive(m_u_sae_index);
             int32_t len;
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                m_oWs.push_back(deserialize_FMatrix(ar));
+                m_oWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
             }
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                m_oVWs.push_back(deserialize_FMatrix(ar));
-            }
+                m_oVWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
+            }            
         }
     }
 
@@ -253,7 +255,6 @@ public:
         return m_oVWs;
     };
 
-
 protected:
     int32_t m_u_sae_index;
     std::vector<FMatrix_ptr>  m_oWs;
@@ -265,6 +266,7 @@ class PushParaReq: public ffnet::Package
 public:
     PushParaReq()
         : Package(msg_push_para_req)
+        , m_u_sae_index(0)
     {}
 
     virtual void archive(ffnet::Archive& ar)
@@ -286,7 +288,7 @@ public:
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
-                m_odWs.push_back(deserialize_FMatrix(ar));
+                m_odWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
             }
         }
     }
@@ -314,6 +316,7 @@ class PushParaAck : public ffnet::Package
 public:
     PushParaAck()
         :Package(msg_push_para_ack)
+        , m_u_sae_index(0)
     {}
     virtual void archive(ffnet::Archive& ar) {
         ar.archive(m_u_sae_index);

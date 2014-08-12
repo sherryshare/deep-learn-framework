@@ -26,7 +26,7 @@ public:
                      const ffnet::EndpointPtr_t& pEP
                     );
     
-    void train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
+    bool train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
                    const ffnet::EndpointPtr_t& pEP);
     const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
         return m_oAEs;
