@@ -14,7 +14,8 @@ public:
     DLMaster(ffnet::NetNervureFromFile& nnff, const std::string& sae_config_file, const std::string& fbnn_config_file)
         : m_oNNFF(nnff),
           m_str_sae_configfile(sae_config_file),
-          m_str_fbnn_ConfigFile(fbnn_config_file) {}
+          m_str_fbnn_ConfigFile(fbnn_config_file),
+          m_iEndPretrain(0) {}
 
     void onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
@@ -39,10 +40,6 @@ public:
                 {
                     m_oNNFF.send(reqmsg, it);
                     std::cout << "send request message to " << it->address() << std::endl;
-//                     boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
-// 		    startMsg->cmd() = "haha!";
-//                     std::cout << "send start Cmd Message onConnSucc!" << std::endl;
-//                     m_oNNFF.send(startMsg, it);
                 }
             }
         }
@@ -66,15 +63,6 @@ public:
             std::cout << "add TCP Client: " << points[i]->ip_addr <<" : "<<points[i]->tcp_port << std::endl;
         }
         //Depart data into pieces based on slave number.
-        //make the output dir
-//         std::string output_dir;
-//         if((output_dir = newDirAtCWD(globalDirStr)) == "")
-//         {
-//             std::cout << "Error when make output dir!" << std::endl;
-//             return;
-//         }
-//         std::cout << "output DIR = " << output_dir << std::endl;
-
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),".");
         m_p_sae = SAE_create(m_p_sae_nc);
@@ -95,7 +83,7 @@ public:
         //Get dl_master server port & ip
         std::string server_addr = m_oNNFF.NervureConf()->get<string_t>("tcp-server.ip");
         uint16_t server_port = m_oNNFF.NervureConf()->get<uint16_t>("tcp-server.port");
-        //TODO(sherryshare) when the file is sent over, send a CmdStartReq msg!
+        //send a CmdStartReq msg!
         boost::shared_ptr<CmdStartReq> startMsg(new CmdStartReq());
         int startIndex = m_str_sae_configfile.find_last_of('/') + 1;
         std::stringstream ss;
@@ -109,33 +97,49 @@ public:
 
     void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
+        //get current parameters from server
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
-        std::cout << "size = " << ackMsg->Ws().size() << std::endl;
+//         std::cout << "size = " << ackMsg->Ws().size() << std::endl;
         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
-        std::cout << "size = " << ackMsg->VWs().size() << std::endl;
-        for(int i = 0; i < ackMsg->Ws().size(); ++i)
-            std::cout << ackMsg->Ws()[i]->operator()(0,0) << std::endl;
+//         std::cout << "size = " << ackMsg->VWs().size() << std::endl;
+//         for(int i = 0; i < ackMsg->Ws().size(); ++i)
+//             std::cout << ackMsg->Ws()[i]->operator()(0,0) << std::endl;
         m_oNNFF.send(ackMsg,pEP);
     }
 
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
         //set odWs
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_odWs(pMsg->dWs());
         //nnapplygrads
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
-        for(int i = 0; i < pMsg->dWs().size(); ++i)
-            std::cout << pMsg->dWs()[i]->operator()(0,0) << std::endl;
+//         for(int i = 0; i < pMsg->dWs().size(); ++i)
+//             std::cout << pMsg->dWs()[i]->operator()(0,0) << std::endl;
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
         m_oNNFF.send(ackMsg,pEP);
         std::cout << "Send push ack!" << std::endl;
+    }
+    
+    void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        std::cout << pEP->address() << ":" << pEP->port();
+        std::cout << " node SAE train ends." << std::endl;
+        ++m_iEndPretrain;//Every node sends only one end message.
+        if(m_iEndPretrain == m_oSlaves.size())//worker number depends on slave number
+        {
+            std::cout << "Ready to train a FFNN." << std::endl;
+//             m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+//             train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+        }
     }
 
 protected:
@@ -147,6 +151,7 @@ protected:
     ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
     NervureConfigurePtr m_p_fbnn_nc;
+    int m_iEndPretrain;
 };
 
 }//end namespace ff
@@ -187,6 +192,7 @@ int main(int argc, char* argv[])
     nnff.addNeedToRecvPkg<FileSendDirAck>(boost::bind(&DLMaster::onRecvSendFileDirAck, &master, _1, _2));
     nnff.addNeedToRecvPkg<PullParaReq>(boost::bind(&DLMaster::onRecvPullReq, &master, _1, _2));
     nnff.addNeedToRecvPkg<PushParaReq>(boost::bind(&DLMaster::onRecvPushReq, &master, _1, _2));
+    nnff.addNeedToRecvPkg<NodeTrainEnd>(boost::bind(&DLMaster::onRecvEndTrain, &master, _1, _2));
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));

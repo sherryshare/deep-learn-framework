@@ -52,7 +52,7 @@ bool file_send(const std::string& input_file,
     }
     std::string remote_url = "scp://" + ip + outputPath + output_file;
 
-    std::cout << "remote_url = " << remote_url << std::endl;
+//     std::cout << "remote_url = " << remote_url << std::endl;
 
     bool ret = true;
 
@@ -130,7 +130,7 @@ bool file_send(const std::string& input_file,
         else
         {
             std::string cmd = static_cast<std::string>("cp ") + input_file + " " + output_dir;
-            std::cout << cmd << std::endl;
+//             std::cout << cmd << std::endl;
             system(cmd.c_str());
             ret = true;
         }
@@ -148,11 +148,11 @@ const std::string send_data_from_dir(const std::string& input_dir, const std::st
     if(dirp != NULL) {
         while((direntp = readdir(dirp)) != NULL) {
             file_name = direntp->d_name;
-            std::cout << "file_name = " << file_name << std::endl;
+//             std::cout << "file_name = " << file_name << std::endl;
             int32_t dotIndex = file_name.find_last_of('.');
             if(dotIndex != std::string::npos && file_name.substr(dotIndex,file_name.length() - dotIndex) == ".part")
             {
-                std::cout << "find input_file " << file_name << std::endl;
+//                 std::cout << "find input_file " << file_name << std::endl;
                 retStr = file_name;
                 file_name = input_dir + "/" + file_name;
                 break;
@@ -162,7 +162,7 @@ const std::string send_data_from_dir(const std::string& input_dir, const std::st
         if(file_send(file_name,ip,path))//send file and delete the local version
         {
             remove(file_name.c_str());
-            std::cout << "Remove file '" << file_name << "'" << std::endl;
+//             std::cout << "Remove file '" << file_name << "'" << std::endl;
         }
     }
     return retStr;

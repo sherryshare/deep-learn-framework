@@ -61,8 +61,8 @@ public:
     void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::cout << "Receive pull ack! Index = " << pMsg->sae_index() << std::endl;
-        for(int i = 0; i < pMsg->Ws().size(); ++i)
-            std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
+//         for(int i = 0; i < pMsg->Ws().size(); ++i)
+//             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
@@ -76,6 +76,8 @@ public:
         if(b_AEIsEnd)
             b_SAEIsEnd = m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster);
         if(b_SAEIsEnd){
+            boost::shared_ptr<NodeTrainEnd> endMsg(new NodeTrainEnd());
+            m_oNNFF.send(endMsg,pEP);
             m_oNNFF.stop();
             std::cout<<"Leaving dl_worker..."<<std::endl;
         }

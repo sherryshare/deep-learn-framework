@@ -20,6 +20,7 @@ enum MsgType {
     msg_pull_para_ack,
     msg_push_para_req,
     msg_push_para_ack,
+    msg_node_train_end,
 };
 
 class HeartBeatMsg : public ffnet::Package
@@ -326,6 +327,16 @@ public:
     }
 protected:
     int32_t m_u_sae_index;
+};
+
+class NodeTrainEnd : public ffnet::Package
+{
+public:
+    NodeTrainEnd()
+        :Package(msg_node_train_end)
+    {}
+    virtual void archive(ffnet::Archive& ar) {}
+protected:
 };
 
 }//end namespace ff
