@@ -6,9 +6,6 @@
 #include "common/common.h"
 #include "common/types.h"
 #include <dtype/type.h>
-#include <blaze/math/Serialization.h>
-#include <sstream>
-
 
 namespace ff {
 enum MsgType {
@@ -192,7 +189,6 @@ void serialize_FMatrix(ffnet::Archive& ar,const FMatrix_ptr& pMat);
 
 FMatrix deserialize_FMatrix(ffnet::Archive& ar);
 
-typedef boost::shared_ptr<double> double_ptr;
 class PullParaAck: public ffnet::Package
 {
 public:
