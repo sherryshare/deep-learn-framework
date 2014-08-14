@@ -34,7 +34,7 @@ set(sae_src src/dsource/read.cpp
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 #matio blaze 
-set(cmn_libs network  boost_thread boost_system matio blaze curl)
+set(cmn_libs network  boost_thread boost_system boost_chrono matio blaze curl)
 ADD_LIBRARY(ffdl SHARED ${cmn_src} ${sae_src} )
 #target_link_libraries(ffdl boost_system boost_date_time boost_thread)
 
