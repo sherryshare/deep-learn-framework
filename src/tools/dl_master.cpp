@@ -15,7 +15,10 @@ public:
         : m_oNNFF(nnff),
           m_str_sae_configfile(sae_config_file),
           m_str_fbnn_ConfigFile(fbnn_config_file),
-          m_iEndPretrain(0) {}
+          m_iEndPretrain(0),
+          m_str_pushhandlefile("push_handle_time.txt"),
+          m_str_pullhandlefile("pull_handle_time.txt")
+          {}
 
     void onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
@@ -97,36 +100,38 @@ public:
 
     void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_oStartTime = boost::chrono::system_clock::now();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
-        std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
+        std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;        
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
         //get current parameters from server
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
-//         std::cout << "size = " << ackMsg->Ws().size() << std::endl;
         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
-//         std::cout << "size = " << ackMsg->VWs().size() << std::endl;
-//         for(int i = 0; i < ackMsg->Ws().size(); ++i)
-//             std::cout << ackMsg->Ws()[i]->operator()(0,0) << std::endl;
         m_oNNFF.send(ackMsg,pEP);
+        m_oEndTime = boost::chrono::system_clock::now();
+        int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
+        m_iPullHandleDurations.push_back(duration_time);
     }
 
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_oStartTime = boost::chrono::system_clock::now();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
-        std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
+        std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;        
         //set odWs
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_odWs(pMsg->dWs());
         //nnapplygrads
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
-//         for(int i = 0; i < pMsg->dWs().size(); ++i)
-//             std::cout << pMsg->dWs()[i]->operator()(0,0) << std::endl;
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
         m_oNNFF.send(ackMsg,pEP);
-        std::cout << "Send push ack!" << std::endl;
+        m_oEndTime = boost::chrono::system_clock::now();
+        int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
+        m_iPushHandleDurations.push_back(duration_time);
+//         std::cout << "Send push ack!" << std::endl;
     }
     
     void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
@@ -139,6 +144,8 @@ public:
             std::cout << "Ready to train a FFNN." << std::endl;
 //             m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
 //             train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+            recordDurationTime(m_iPullHandleDurations,m_str_pullhandlefile);
+            recordDurationTime(m_iPushHandleDurations,m_str_pushhandlefile);
         }
     }
 
@@ -148,10 +155,16 @@ protected:
     std::vector<ffnet::EndpointPtr_t> m_oSlaves;
     std::string m_str_sae_configfile;
     std::string m_str_fbnn_ConfigFile;
+    const std::string m_str_pushhandlefile;
+    const std::string m_str_pullhandlefile;
     ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
     NervureConfigurePtr m_p_fbnn_nc;
     int m_iEndPretrain;
+    TimePoint m_oStartTime;
+    TimePoint m_oEndTime;
+    std::vector<int> m_iPushHandleDurations;
+    std::vector<int> m_iPullHandleDurations;
 };
 
 }//end namespace ff

@@ -41,29 +41,22 @@ std::string local_ip_v4()
     return "";
 }
 
-/*
-int32_t count_elapse_microsecond(const std::function<void ()>& f)
+bool recordDurationTime(std::vector<int>& recordVec,const std::string& outFileName)
 {
-    using namespace std::chrono;
-
-    time_point<system_clock> start, end;
-
-    start = system_clock::now();
-    f();
-    end = system_clock::now();
-    return duration_cast<microseconds>(end-start).count();
+    std::ofstream output_file(outFileName.c_str());
+    if(!output_file.is_open()) {
+        std::cout<<"Failed to open file: "<< outFileName << std::endl;
+        return false;
+    }
+    else {
+        std::cout << "Write file: " << outFileName << std::endl;
+        for(std::vector<int>::iterator iter = recordVec.begin(); iter!= recordVec.end(); ++iter)
+        {
+            output_file << *iter << std::endl;
+        }
+    }
+    output_file.close();
+    return true;
 }
-
-int32_t count_elapse_second(const std::function<void ()>& f)
-{
-    using namespace std::chrono;
-
-    time_point<system_clock> start, end;
-
-    start = system_clock::now();
-    f();
-    end = system_clock::now();
-    return duration_cast<seconds>(end-start).count();
-}*/
 
 }//end namespace ff

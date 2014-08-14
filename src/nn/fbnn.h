@@ -8,9 +8,11 @@
 #include "nn/loss.h"
 #include "utils/utils.h"
 //mutex
-#include <boost/thread/locks.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/condition.hpp>
+// #include <boost/thread/locks.hpp>
+// #include <boost/thread/shared_mutex.hpp>
+// #include <boost/thread/condition.hpp>
+
+#include <boost/chrono.hpp>//time
 
 #include "pkgs/pkgs.h"
 
@@ -21,7 +23,8 @@ namespace ff
 class FBNN;
 typedef boost::shared_ptr<FBNN> FBNN_ptr;
 
-typedef boost::shared_mutex RWMutex;
+// typedef boost::shared_mutex RWMutex;
+typedef boost::chrono::time_point<boost::chrono::system_clock> TimePoint;
 class FBNN {
 public:
     FBNN(const Arch_t& arch,
@@ -82,15 +85,19 @@ public:
                const Opts& opts,
                ffnet::NetNervureFromFile& ref_NNFF,
                const ffnet::EndpointPtr_t& pEP,
-               const int32_t sae_index);
+               const int32_t sae_index,
+               TimePoint& startTime
+              );
 
     void train_after_pull(const int32_t sae_index,
                           ffnet::NetNervureFromFile& ref_NNFF,
-                          const ffnet::EndpointPtr_t& pEP
+                          const ffnet::EndpointPtr_t& pEP,
+                          TimePoint& startTime
                          );
     bool train_after_push(const int32_t sae_index,
                           ffnet::NetNervureFromFile& ref_NNFF,
-                          const ffnet::EndpointPtr_t& pEP
+                          const ffnet::EndpointPtr_t& pEP,
+                          TimePoint& startTime
                          );
 
     void train(const FMatrix& train_x,
@@ -114,8 +121,8 @@ public:
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    RWMutex m_g_odWsMutex;
-    RWMutex m_g_oWsMutex;
+//     RWMutex m_g_odWsMutex;
+//     RWMutex m_g_oWsMutex;
 
 protected:
 

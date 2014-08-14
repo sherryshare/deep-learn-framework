@@ -21,7 +21,7 @@ struct slave_point_t {
 typedef boost::shared_ptr<slave_point_t> slave_point_spt;
 typedef slave_point_t* slave_point_pt;
 
-typedef  boost::uint16_t uint16_t;
+// typedef  boost::uint16_t uint16_t;// Already defined in ffnet
 
 }//end namespace ff
 

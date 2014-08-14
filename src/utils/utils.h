@@ -17,29 +17,7 @@ namespace ff {
 const std::string globalDirStr = "globalFiles";
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
-
-//int32_t count_elapse_microsecond(const std::function<void ()>& f);
-//int32_t count_elapse_second(const std::function<void ()>& f);
-
-// inline void* openLibrary(const std::string & libStr)
-// {
-//     // open the library
-//     std::cout << "Opening " << libStr << "..." << std::endl;
-//     void* handle = dlopen(libStr.c_str(), RTLD_LAZY);
-//     if (!handle) {
-//         std::cerr << "Cannot open library: " << dlerror() << std::endl;
-//         return nullptr;
-//     }
-//     return handle;
-// }
-//
-// inline void closeLibrary(void* handle)
-// {
-//     // close the library
-//     std::cout << "Closing library..." << std::endl;
-//     dlclose(handle);
-//     handle = nullptr;//necessary?
-// }
+bool recordDurationTime(std::vector<int>& recordVec,const std::string& outFileName);
 
 inline std::string newDirAtCWD(const std::string & newFileName, const std::string & backUpPath = "")
 {

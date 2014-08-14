@@ -42,7 +42,9 @@ void SAE::SAETrain(const FMatrix& train_x, const Opts& opts)
 void SAE::SAETrain(const FMatrix& train_x,
                    const Opts& opts,
                    ffnet::NetNervureFromFile& ref_NNFF,
-                   const ffnet::EndpointPtr_t& pEP)
+                   const ffnet::EndpointPtr_t& pEP,
+                   TimePoint& startTime
+                  )
 {
     std::cout << "Start training SAE." << std::endl;
     m_pTrain_x = FMatrix_ptr(new FMatrix(train_x));
@@ -50,11 +52,13 @@ void SAE::SAETrain(const FMatrix& train_x,
     m_sOpts = opts;
     std::cout << "Training AE " << m_iAEIndex+1 << " / " << m_oAEs.size() << ", ";
     std::cout << "x = (" << m_pTrain_x->rows() << ", " << m_pTrain_x->columns() << ")"<< std::endl;
-    m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex);
+    m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex, startTime);
 }
 
 bool SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
-                             const ffnet::EndpointPtr_t& pEP)
+                             const ffnet::EndpointPtr_t& pEP,
+                             TimePoint& startTime
+                            )
 {
 //     std::cout << "Start train_after_end_AE:" << std::endl;
     m_oAEs[m_iAEIndex]->nnff(*m_pTrain_x, *m_pTrain_x);
@@ -65,7 +69,7 @@ bool SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
     {
         std::cout << "Training AE " << m_iAEIndex+1 << " / " << m_oAEs.size() << ", ";
         std::cout << "x = (" << m_pTrain_x->rows() << ", " << m_pTrain_x->columns() << ")"<< std::endl;
-        m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex);
+        m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, m_iAEIndex,startTime);
 //         std::cout << "End train_after_end_AE." << std::endl;
     }
     else

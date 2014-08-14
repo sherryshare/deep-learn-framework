@@ -16,7 +16,10 @@ public:
           m_str_sae_configfile(sae_config_file),
           m_str_inputfile(input_data_file),
           m_str_server_ip(server_ip),
-          m_u_server_port(server_port) {}
+          m_u_server_port(server_port),
+          m_str_pushtimefile("push_time.txt"),
+          m_str_pullfimefile("pull_time.txt")
+    {}
 
     void    onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
@@ -53,46 +56,64 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster);//local version - without req and ack, test right!
+        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime);//local version - without req and ack, test right!
 //         m_p_sae->SAETrain(*train_x,opts);//test ok
+//         m_oStartTime = boost::chrono::system_clock::now();
         return true;
     }
 
     void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_oEndTime = boost::chrono::system_clock::now();
         std::cout << "Receive pull ack! Index = " << pMsg->sae_index() << std::endl;
+        int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
+        m_iPullDurations.push_back(duration_time);
+        std::cout << "Duration time = " << duration_time << "ms" << std::endl;
 //         for(int i = 0; i < pMsg->Ws().size(); ++i)
 //             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
-        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster,m_oStartTime);
     }
 
     void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_oEndTime = boost::chrono::system_clock::now();
         std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
-        bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_push(pMsg->sae_index(),m_oNNFF,m_oDLMaster);
+        int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
+        m_iPushDurations.push_back(duration_time);
+        std::cout << "Duration time = " << duration_time << "ms" << std::endl;
+        bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_push(pMsg->sae_index(),m_oNNFF,m_oDLMaster,m_oStartTime);
         bool b_SAEIsEnd;
         if(b_AEIsEnd)
-            b_SAEIsEnd = m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster);
-        if(b_SAEIsEnd){
+            b_SAEIsEnd = m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster,m_oStartTime);
+        if(b_SAEIsEnd) {
             boost::shared_ptr<NodeTrainEnd> endMsg(new NodeTrainEnd());
             m_oNNFF.send(endMsg,pEP);
             m_oNNFF.stop();
             std::cout<<"Leaving dl_worker..."<<std::endl;
+            recordDurationTime(m_iPullDurations,m_str_pullfimefile);
+            recordDurationTime(m_iPushDurations,m_str_pushtimefile);
         }
-    }
+    }    
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
+//     typedef boost::chrono::time_point<boost::chrono::system_clock> TimePoint;
     ffnet::NetNervureFromFile&     m_oNNFF;
     ffnet::EndpointPtr_t m_oDLMaster;
     const std::string& m_str_sae_configfile;
     const std::string& m_str_inputfile;
     const std::string& m_str_server_ip;
+    const std::string m_str_pushtimefile;
+    const std::string m_str_pullfimefile;
     const uint16_t m_u_server_port;
     ff::SAE_ptr m_p_sae;
     NervureConfigurePtr m_p_sae_nc;
+    TimePoint m_oStartTime;
+    TimePoint m_oEndTime;
+    std::vector<int> m_iPushDurations;
+    std::vector<int> m_iPullDurations;
 };
 
 }//end namespace ff

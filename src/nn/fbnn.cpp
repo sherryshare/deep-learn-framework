@@ -116,7 +116,9 @@ void FBNN::train(const FMatrix& train_x,
                  const Opts& opts,
                  ffnet::NetNervureFromFile& ref_NNFF,
                  const ffnet::EndpointPtr_t& pEP,
-                 const int32_t sae_index)
+                 const int32_t sae_index,
+                 TimePoint& startTime
+                )
 {
     m_opTrain_x = FMatrix_ptr(new FMatrix(train_x));// Copy and store train_x
     m_sOpts = opts;
@@ -135,13 +137,15 @@ void FBNN::train(const FMatrix& train_x,
     std::cout << "Need to pull weights!" << std::endl;
     boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
     pullReqMsg->sae_index() = sae_index;
+    startTime = boost::chrono::system_clock::now();//pull time clock
     ref_NNFF.send(pullReqMsg,pEP);
-//     train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28
+//     train_after_pull(sae_index,ref_NNFF,pEP,startTime);//add to avoid network failure-07/28
 }
 
 void FBNN::train_after_pull(const int32_t sae_index,
                             ffnet::NetNervureFromFile& ref_NNFF,
-                            const ffnet::EndpointPtr_t& pEP
+                            const ffnet::EndpointPtr_t& pEP,
+                            TimePoint& startTime
                            )
 {
     //in batch loop
@@ -161,18 +165,21 @@ void FBNN::train_after_pull(const int32_t sae_index,
     nnapplygrads();
     //push under network conditions
     std::cout << "Need to push weights!" << std::endl;
+    
     //set push package
     boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
     copy(get_m_odWs().begin(),get_m_odWs().end(),std::back_inserter(pushReqMsg->dWs()));
     pushReqMsg->sae_index() = sae_index;
+    startTime = boost::chrono::system_clock::now();//push time clock
     ref_NNFF.send(pushReqMsg,pEP);
     ++m_ivBatch;
-//     train_after_push(sae_index,ref_NNFF,pEP);
+//     train_after_push(sae_index,ref_NNFF,pEP,startTime);
 }
 
 bool FBNN::train_after_push(const int32_t sae_index,
                             ffnet::NetNervureFromFile& ref_NNFF,
-                            const ffnet::EndpointPtr_t& pEP
+                            const ffnet::EndpointPtr_t& pEP,
+                            TimePoint& startTime
                            )
 {
     bool retVal = false;
@@ -181,9 +188,10 @@ bool FBNN::train_after_push(const int32_t sae_index,
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
-        pullReqMsg->sae_index() = sae_index; 
+        pullReqMsg->sae_index() = sae_index;
+        startTime = boost::chrono::system_clock::now();//pull time clock
         ref_NNFF.send(pullReqMsg,pEP);
-//         train_after_pull(sae_index,ref_NNFF,pEP);//add to avoid network failure-07/28        
+//         train_after_pull(sae_index,ref_NNFF,pEP,startTime);//add to avoid network failure-07/28        
     }
     else if(m_ivEpoch < m_sOpts.numpochs) {
 //         std::cout << std::endl;
@@ -204,7 +212,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
             randperm(m_opTrain_x->rows(),m_oRandVec);
 //             std::cout << "start batch: ";            
         }
-        retVal = train_after_push(sae_index,ref_NNFF,pEP);        
+        retVal = train_after_push(sae_index,ref_NNFF,pEP,startTime);        
     }
     else {
         std::cout << "End fbnn training!" << std::endl;
