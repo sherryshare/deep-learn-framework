@@ -36,9 +36,9 @@ static bool write_to_file(const std::string& output_file,const FMatrix_ptr& trai
     else {
         std::cout << "write file: " << output_file << std::endl;
 // 	out_file << train_x->rows() << " " << train_x->columns() << std::endl;//real command
-        out_file << "20" << " " << train_x->columns() << std::endl;//for quick test
+        out_file << "1000" << " " << train_x->columns() << std::endl;//for quick test
 //         for(size_t r = 0; r < train_x->rows(); ++r)//real command
-        for(size_t r = 0; r < train_x->rows() && r < 20; ++r)//for quick test
+        for(size_t r = 0; r < train_x->rows() && r < 1000; ++r)//for quick test
         {
             out_file << row(*train_x,r);
         }

@@ -113,7 +113,7 @@ public:
         m_oNNFF.send(ackMsg,pEP);
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
-        m_iPullHandleDurations.push_back(duration_time);
+        m_iPullHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
     }
 
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
@@ -130,7 +130,7 @@ public:
         m_oNNFF.send(ackMsg,pEP);
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
-        m_iPushHandleDurations.push_back(duration_time);
+        m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
 //         std::cout << "Send push ack!" << std::endl;
     }
     
@@ -163,8 +163,8 @@ protected:
     int m_iEndPretrain;
     TimePoint m_oStartTime;
     TimePoint m_oEndTime;
-    std::vector<int> m_iPushHandleDurations;
-    std::vector<int> m_iPullHandleDurations;
+    std::vector<std::pair<int,int> > m_iPushHandleDurations;
+    std::vector<std::pair<int,int> > m_iPullHandleDurations;
 };
 
 }//end namespace ff

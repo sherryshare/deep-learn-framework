@@ -41,7 +41,7 @@ std::string local_ip_v4()
     return "";
 }
 
-bool recordDurationTime(std::vector<int>& recordVec,const std::string& outFileName)
+bool recordDurationTime(std::vector<std::pair<int,int> >& recordVec,const std::string& outFileName)
 {
     std::ofstream output_file(outFileName.c_str());
     if(!output_file.is_open()) {
@@ -50,9 +50,9 @@ bool recordDurationTime(std::vector<int>& recordVec,const std::string& outFileNa
     }
     else {
         std::cout << "Write file: " << outFileName << std::endl;
-        for(std::vector<int>::iterator iter = recordVec.begin(); iter!= recordVec.end(); ++iter)
+        for(std::vector<std::pair<int,int> >::iterator iter = recordVec.begin(); iter!= recordVec.end(); ++iter)
         {
-            output_file << *iter << std::endl;
+            output_file << iter->first << "\t" << iter->second << std::endl;
         }
     }
     output_file.close();

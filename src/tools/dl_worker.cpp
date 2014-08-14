@@ -67,7 +67,7 @@ public:
         m_oEndTime = boost::chrono::system_clock::now();
         std::cout << "Receive pull ack! Index = " << pMsg->sae_index() << std::endl;
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
-        m_iPullDurations.push_back(duration_time);
+        m_iPullDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
         std::cout << "Duration time = " << duration_time << "ms" << std::endl;
 //         for(int i = 0; i < pMsg->Ws().size(); ++i)
 //             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
@@ -81,7 +81,7 @@ public:
         m_oEndTime = boost::chrono::system_clock::now();
         std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
-        m_iPushDurations.push_back(duration_time);
+        m_iPushDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
         std::cout << "Duration time = " << duration_time << "ms" << std::endl;
         bool b_AEIsEnd = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_push(pMsg->sae_index(),m_oNNFF,m_oDLMaster,m_oStartTime);
         bool b_SAEIsEnd;
@@ -112,8 +112,8 @@ protected:
     NervureConfigurePtr m_p_sae_nc;
     TimePoint m_oStartTime;
     TimePoint m_oEndTime;
-    std::vector<int> m_iPushDurations;
-    std::vector<int> m_iPullDurations;
+    std::vector<std::pair<int,int> > m_iPushDurations;
+    std::vector<std::pair<int,int> > m_iPullDurations;
 };
 
 }//end namespace ff

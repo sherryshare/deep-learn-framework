@@ -4,11 +4,6 @@
 #include <network.h>
 #include <sstream>
 #include "common/common.h"
-//#include <chrono>
-//#include <functional>
-// #include <dlfcn.h>//dymanic library
-
-// #define GLOBALFILENAME "globalFiles"
 
 
 
@@ -17,7 +12,7 @@ namespace ff {
 const std::string globalDirStr = "globalFiles";
 std::string endpoint_to_string(ffnet::EndpointPtr_t pEP);
 std::string local_ip_v4();
-bool recordDurationTime(std::vector<int>& recordVec,const std::string& outFileName);
+bool recordDurationTime(std::vector<std::pair<int,int> >& recordVec,const std::string& outFileName);
 
 inline std::string newDirAtCWD(const std::string & newFileName, const std::string & backUpPath = "")
 {
