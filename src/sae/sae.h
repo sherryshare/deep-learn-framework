@@ -17,14 +17,17 @@ public:
     SAE(const Arch_t& arch,
         const std::string& activationFunction = "sigm",
         const double learningRate = 1,
-        const double inputZeroMaskedFraction = 0.5);
+        const double inputZeroMaskedFraction = 0.5,
+        const int32_t maxSynchronicStep = 20
+       );
     void SAETrain(const FMatrix& train_x,
                   const Opts& opts);
     void SAETrain(const FMatrix& train_x,
                   const Opts& opts,
                   ffnet::NetNervureFromFile& ref_NNFF,
                   const ffnet::EndpointPtr_t& pEP,
-                  TimePoint& startTime
+                  TimePoint& startTime,
+                  int32_t defaultSynchronicStep = -1
                  );
 
     bool train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
@@ -42,9 +45,10 @@ protected:
     const double          m_fInputZeroMaskedFraction;
 
     //members used in network version
-    int m_iAEIndex;
+    int32_t m_iAEIndex;
     FMatrix_ptr m_pTrain_x;
     Opts m_sOpts;
+    int32_t m_iDefaultSynchronicStep;
 
 
 };//end class SAE

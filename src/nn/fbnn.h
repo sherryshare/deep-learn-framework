@@ -15,6 +15,7 @@
 #include <boost/chrono.hpp>//time
 
 #include "pkgs/pkgs.h"
+#include <../../parameter_server/src/util/integral_types.h>
 
 namespace ff
 {
@@ -29,8 +30,12 @@ class FBNN {
 public:
     FBNN(const Arch_t& arch,
          const std::string& activeStr = "tanh_opt",
-         const double learningRate = 2, const double zeroMaskedFraction = 0.0,
-         const bool testing = false, const std::string& outputStr = "sigm");
+         const double learningRate = 2,
+         const double zeroMaskedFraction = 0.0,
+         const int32_t maxSynchronicStep = 20,
+         const bool testing = false,         
+         const std::string& outputStr = "sigm"         
+        );
     //FBNN(const FBNN& p) = delete;
     //FBNN& operator =(const FBNN& p) = delete;
 
@@ -86,7 +91,8 @@ public:
                ffnet::NetNervureFromFile& ref_NNFF,
                const ffnet::EndpointPtr_t& pEP,
                const int32_t sae_index,
-               TimePoint& startTime
+               TimePoint& startTime,
+               int32_t defaultSynchronicStep
               );
 
     void train_after_pull(const int32_t sae_index,
@@ -120,6 +126,28 @@ public:
     void nneval(Loss& loss, const FMatrix& train_x, const FMatrix& train_y);
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
+
+    inline void setCurrentPushSynchronicStep(int32_t step = -1) {//set before push
+        if(step == -1)
+            m_iCurrentPushSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
+        else
+            m_iCurrentPushSynchronicStep = step;
+        int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPushSteps;
+        if(m_iCurrentPushSynchronicStep > deltaSteps)
+            m_iCurrentPushSynchronicStep = deltaSteps;
+        m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
+    }
+
+    inline void setCurrentPullSynchronicStep(int32_t step = -1) {//set before pull
+        if(step == -1)
+            m_iCurrentPullSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
+        else
+            m_iCurrentPullSynchronicStep = step;
+        int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPullSteps;
+        if(m_iCurrentPullSynchronicStep > deltaSteps)
+            m_iCurrentPullSynchronicStep = deltaSteps;
+        m_iAccumulatedPullSteps += m_iCurrentPullSynchronicStep;
+    }
 
 //     RWMutex m_g_odWsMutex;
 //     RWMutex m_g_oWsMutex;
@@ -162,6 +190,15 @@ protected:
     Loss m_oLoss;
     FMatrix_ptr m_opTrain_x;
     Opts m_sOpts;
+    const int32_t m_iMaxSynchronicStep;//Synchronic operation steps couldn't be larger than this
+    int32_t m_iCurrentPushSynchronicStep;//Vary from 1 to m_iMaxSynchronicStep, controled by network monitor
+    int32_t m_iPushStepNum;//Count passed steps
+    int32_t m_iAccumulatedPushSteps;//Must be less than m_iMaxSynchronicStep, m_iAccumulatedSteps += m_iCurrentSynchronicStep;
+    int32_t m_iCurrentPullSynchronicStep;//Vary from 1 to m_iMaxSynchronicStep, controled by network monitor
+    int32_t m_iPullStepNum;//Count passed steps
+    int32_t m_iAccumulatedPullSteps;//Must be less than m_iMaxSynchronicStep, m_iAccumulatedSteps += m_iCurrentSynchronicStep;
+//     bool m_bHasPushed;//Pull operation could only happen when m_bHasPushed == true;
+    int32_t m_iDefaultStepValue;//Used to control step by dl_worker
 
 };//end class FBNN
 //   typedef std::shared_ptr<FBNN> FBNN_ptr;

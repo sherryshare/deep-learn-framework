@@ -7,8 +7,10 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
     const std::string activationFunction = getActivationFunctionFromNervureConfigure(pnc);
     const double learningRate = getLearningRateFromNervureConfigure(pnc);
     const double inputZeroMaskedFraction = getInputZeroMaskedFractionFromNervureConfigure(pnc);
+    const int32_t maxSynchronicStep = getMaxSynchronicStepFromNervureConfigure(pnc);
 
     std::cout << activationFunction << "\t" << learningRate << "\t" << inputZeroMaskedFraction << std::endl;
+    std::cout << "Max synchronic step = " << maxSynchronicStep << std::endl;
 
     Arch_t sae_arch;
     getArchFromNervureConfigure(pnc,"sae",sae_arch);
@@ -18,7 +20,8 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
     std::cout << "Pretrain an SAE" << std::endl;
     std::cout << "sae_arch = " << sae_arch << "numel(sae_arch) = " << numel(sae_arch) << std::endl;
 //     SAE sae(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction);
-    return SAE_ptr(new SAE(sae_arch,activationFunction,learningRate,inputZeroMaskedFraction));
+    return SAE_ptr(new SAE(sae_arch,activationFunction,learningRate,
+                           inputZeroMaskedFraction,maxSynchronicStep-1));//count from 0
 }
 
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,

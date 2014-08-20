@@ -37,6 +37,10 @@ inline const std::string getInputFileNameFromNervureConfigure(const NervureConfi
     return pnc->get<std::string>("path.input-file");
 }
 
+inline const int32_t getMaxSynchronicStepFromNervureConfigure(const NervureConfigurePtr& pnc) {
+    return pnc->get<int32_t>("opt.max-synchronic-step");    
+}
+
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
                                  const std::string& structure_name,
                                  Arch_t & arch);
