@@ -61,6 +61,7 @@ public:
         int duration_time = boost::chrono::duration_cast<boost::chrono::minutes>(m_oEndTime-m_oStartTime).count();
         std::cout << "Duration time = " << duration_time << "min" << std::endl;
         boost::shared_ptr<NodeTrainEnd> endMsg(new NodeTrainEnd());
+        endMsg->startNNTrain() = false;//No need to train NN on master
         m_oNNFF.send(endMsg,pEP);
         m_oNNFF.stop();
         std::cout<<"Leaving dl_worker..."<<std::endl;
@@ -122,6 +123,7 @@ public:
             b_SAEIsEnd = m_p_sae->train_after_end_AE(m_oNNFF,m_oDLMaster,m_oStartTime);
         if(b_SAEIsEnd) {
             boost::shared_ptr<NodeTrainEnd> endMsg(new NodeTrainEnd());
+//             endMsg->startNNTrain() = false;// add when no need to train NN
             m_oNNFF.send(endMsg,pEP);
             m_oNNFF.stop();
             std::cout<<"Leaving dl_worker..."<<std::endl;

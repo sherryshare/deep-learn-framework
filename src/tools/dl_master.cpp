@@ -18,7 +18,7 @@ public:
           m_iEndPretrain(0),
           m_str_pushhandlefile("push_handle_time.txt"),
           m_str_pullhandlefile("pull_handle_time.txt")
-          {}
+    {}
 
     void onConnSucc(ffnet::TCPConnectionBase*pConn)
     {
@@ -102,7 +102,7 @@ public:
     {
         m_oStartTime = boost::chrono::system_clock::now();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
-        std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;        
+        std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
         //get current parameters from server
@@ -120,7 +120,7 @@ public:
     {
         m_oStartTime = boost::chrono::system_clock::now();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
-        std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;        
+        std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
         //set odWs
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_odWs(pMsg->dWs());
         //nnapplygrads
@@ -133,7 +133,7 @@ public:
         m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
 //         std::cout << "Send push ack!" << std::endl;
     }
-    
+
     void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
     {
         std::cout << pEP->address() << ":" << pEP->port();
@@ -142,10 +142,13 @@ public:
         if(m_iEndPretrain == m_oSlaves.size())//worker number depends on slave number
         {
             std::cout << "Ready to train a FFNN." << std::endl;
-            m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-            train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
             recordDurationTime(m_iPullHandleDurations,m_str_pullhandlefile);
             recordDurationTime(m_iPushHandleDurations,m_str_pushhandlefile);
+            if(pMsg->startNNTrain())//1 slave run alone
+            {
+                m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+                train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+            }
         }
     }
 

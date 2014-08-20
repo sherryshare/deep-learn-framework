@@ -334,9 +334,22 @@ class NodeTrainEnd : public ffnet::Package
 public:
     NodeTrainEnd()
         :Package(msg_node_train_end)
+        , m_b_start_NNTrain(true)
     {}
-    virtual void archive(ffnet::Archive& ar) {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_b_start_NNTrain);
+    }
+    
+    bool& startNNTrain() {
+        return m_b_start_NNTrain;
+    }
+    
+    const bool& startNNTrain() const {
+        return m_b_start_NNTrain;
+    }
+    
 protected:
+    bool m_b_start_NNTrain;
 };
 
 }//end namespace ff
