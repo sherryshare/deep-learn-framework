@@ -142,8 +142,8 @@ public:
         if(m_iEndPretrain == m_oSlaves.size())//worker number depends on slave number
         {
             std::cout << "Ready to train a FFNN." << std::endl;
-//             m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-//             train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+            m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+            train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
             recordDurationTime(m_iPullHandleDurations,m_str_pullhandlefile);
             recordDurationTime(m_iPushHandleDurations,m_str_pushhandlefile);
         }

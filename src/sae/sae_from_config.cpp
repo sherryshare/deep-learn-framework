@@ -68,10 +68,10 @@ void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
     *d.test_x = (*d.test_x) / 255;
 
     //add for quick test
-    *d.train_x = submatrix(*d.train_x,0UL,0UL,20,d.train_x->columns());
-    *d.train_y = submatrix(*d.train_y,0UL,0UL,20,d.train_y->columns());
-    *d.test_x = submatrix(*d.test_x,0UL,0UL,20,d.test_x->columns());
-    *d.test_y = submatrix(*d.test_y,0UL,0UL,20,d.test_y->columns());
+//     *d.train_x = submatrix(*d.train_x,0UL,0UL,20,d.train_x->columns());
+//     *d.train_y = submatrix(*d.train_y,0UL,0UL,20,d.train_y->columns());
+//     *d.test_x = submatrix(*d.test_x,0UL,0UL,20,d.test_x->columns());
+//     *d.test_y = submatrix(*d.test_y,0UL,0UL,20,d.test_y->columns());
 
 
     //Use the SDAE to initialize a FFNN

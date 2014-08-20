@@ -44,11 +44,30 @@ public:
                 it->port() == m_u_server_port) {
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
-            SAE_run();
+            //local serial version
+            SAE_run(false,it);
+            //para version
+//             SAE_run();
         }
     }
 
-    bool SAE_run(void)
+    void FBNN_run(const ffnet::EndpointPtr_t& pEP)
+    {
+        /* training FFNN local version*/
+        m_oStartTime = boost::chrono::system_clock::now();
+        NervureConfigurePtr m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+        train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+        m_oEndTime = boost::chrono::system_clock::now();
+        int duration_time = boost::chrono::duration_cast<boost::chrono::minutes>(m_oEndTime-m_oStartTime).count();
+        std::cout << "Duration time = " << duration_time << "min" << std::endl;
+        boost::shared_ptr<NodeTrainEnd> endMsg(new NodeTrainEnd());
+        m_oNNFF.send(endMsg,pEP);
+        m_oNNFF.stop();
+        std::cout<<"Leaving dl_worker..."<<std::endl;
+    }
+
+    bool SAE_run(bool isPara = true, 
+                 const ffnet::EndpointPtr_t& pEP = ffnet::EndpointPtr_t((ffnet::Endpoint* )NULL))
     {
         FMatrix_ptr train_x = read_matrix_from_dir(m_str_inputfile);
         if(train_x == NULL)
@@ -56,9 +75,23 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime);//local version - without req and ack, test right!
-//         m_p_sae->SAETrain(*train_x,opts);//test ok
-//         m_oStartTime = boost::chrono::system_clock::now();
+        if(isPara)
+        {
+            /* para version */
+            m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime);
+            /* end para version */
+        }
+        else
+        {
+            /* serial version */
+            m_oStartTime = boost::chrono::system_clock::now();
+            m_p_sae->SAETrain(*train_x,opts);//serial train
+            m_oEndTime = boost::chrono::system_clock::now();
+            int duration_time = boost::chrono::duration_cast<boost::chrono::minutes>(m_oEndTime-m_oStartTime).count();
+            std::cout << "Duration time = " << duration_time << "min" << std::endl;
+            FBNN_run(pEP);
+            /* end serial version */
+        }
         return true;
     }
 
@@ -95,7 +128,7 @@ public:
             recordDurationTime(m_iPullDurations,m_str_pullfimefile);
             recordDurationTime(m_iPushDurations,m_str_pushtimefile);
         }
-    }    
+    }
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
