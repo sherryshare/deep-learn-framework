@@ -15,7 +15,7 @@ FBNN::FBNN(const Arch_t& arch,
            const double zeroMaskedFraction,
            const int32_t maxSynchronicStep,
            const bool testing,
-           const std::string& outputStr          
+           const std::string& outputStr
           )
     : m_oArch(arch)
     , m_iN(numel(arch))
@@ -23,9 +23,9 @@ FBNN::FBNN(const Arch_t& arch,
     , m_fLearningRate(learningRate)
     , m_fInputZeroMaskedFraction(zeroMaskedFraction)
     , m_iMaxSynchronicStep(maxSynchronicStep)
-    , m_fTesting(testing)    
+    , m_fTesting(testing)
     , m_strOutput(outputStr)
-    
+
 {
     for(int32_t i = 1; i < m_iN; ++i)
     {
@@ -62,7 +62,8 @@ void FBNN::train(const FMatrix& train_x,
     for(int32_t i = 0; i < opts.numpochs; ++i)
     {
         std::cout << "start numpochs " << i << std::endl;
-        //int32_t elapsedTime = count_elapse_second([&train_x,&train_y,&L,&opts,i,pFBNN,ibatchNum,this] {
+        boost::chrono::time_point<boost::chrono::system_clock> start, end;
+        start = boost::chrono::system_clock::now();
         std::vector<int32_t> iRandVec;
         randperm(train_x.rows(),iRandVec);
         std::cout << "start batch: ";
@@ -90,8 +91,9 @@ void FBNN::train(const FMatrix& train_x,
 // 	      std::cout << "end batch " << j << std::endl;
         }
         std::cout << std::endl;
-        //});
-        //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
+        end = boost::chrono::system_clock::now();
+        int elapsedTime = boost::chrono::duration_cast<boost::chrono::minutes>
+                          (end-start).count();
         //loss calculate use nneval
         if(valid_x.rows() == 0 || valid_y.rows() == 0) {
             nneval(loss, train_x, train_y);
@@ -101,7 +103,7 @@ void FBNN::train(const FMatrix& train_x,
             nneval(loss, train_x, train_y, valid_x, valid_y);
             std::cout << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back() << std::endl;
         }
-        //std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
+        std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " minites." << std::endl;
         std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(*m_oLp,i*ibatchNum,0UL,ibatchNum,m_oLp->columns())) << std::endl;
         m_fLearningRate *= m_fScalingLearningRate;
 // 	  std::cout << "end numpochs " << i << std::endl;

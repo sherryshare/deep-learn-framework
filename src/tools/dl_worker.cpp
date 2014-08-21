@@ -45,9 +45,9 @@ public:
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
             //local serial version
-//             SAE_run(false,it);
+            SAE_run(false,it);
             //para version
-            SAE_run();
+//             SAE_run();
         }
     }
 
