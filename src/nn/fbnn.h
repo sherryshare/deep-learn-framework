@@ -135,6 +135,7 @@ public:
         if(m_iCurrentPushSynchronicStep > deltaSteps)
             m_iCurrentPushSynchronicStep = deltaSteps;
         m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
+        m_iPushStepNum = 0;//reset
     }
 
     inline void setCurrentPullSynchronicStep(int32_t step = -1) {//set before pull
@@ -146,6 +147,7 @@ public:
         if(m_iCurrentPullSynchronicStep > deltaSteps)
             m_iCurrentPullSynchronicStep = deltaSteps;
         m_iAccumulatedPullSteps += m_iCurrentPullSynchronicStep;
+        m_iPullStepNum = 0;//reset
     }
 
 //     RWMutex m_g_odWsMutex;

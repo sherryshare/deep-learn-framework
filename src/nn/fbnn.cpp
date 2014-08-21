@@ -133,8 +133,8 @@ void FBNN::train(const FMatrix& train_x,
     m_iDefaultStepValue = defaultSynchronicStep;
     m_iAccumulatedPullSteps = 0;
     m_iAccumulatedPushSteps = 0;
-    m_iPullStepNum = 0;
-    m_iPushStepNum = 0;
+//     m_iPullStepNum = 0;
+//     m_iPushStepNum = 0;
     /* end initialize step count */
     m_iBatchNum = m_opTrain_x->rows() / m_sOpts.batchsize + (m_opTrain_x->rows() % m_sOpts.batchsize != 0);
     std::cout << "Total batch num = " << m_iBatchNum << std::endl;
@@ -161,7 +161,7 @@ void FBNN::train(const FMatrix& train_x,
         ref_NNFF.send(pullReqMsg,pEP);
         /* reset step count */
         m_iAccumulatedPullSteps = 0;
-        m_iPullStepNum = 0;
+//         m_iPullStepNum = 0;
         setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
     }
     else
@@ -195,7 +195,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep && m_iDefaultStepValue < 0)//if not randomly, push right now
     {
         setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly
-        m_iPushStepNum = 0;
+//         m_iPushStepNum = 0;
     }
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
     {
@@ -211,7 +211,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
         ++m_ivBatch;
         /* reset step count */
         m_iAccumulatedPushSteps = 0;
-        m_iPushStepNum = 0;
+//         m_iPushStepNum = 0;
         setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately
     }
     else
@@ -234,7 +234,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep && m_iDefaultStepValue < 0)
         {
             setCurrentPullSynchronicStep(m_iDefaultStepValue);//Attempt to pull randomly
-            m_iPullStepNum = 0;
+//             m_iPullStepNum = 0;
         }
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
         {
@@ -247,7 +247,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
             ref_NNFF.send(pullReqMsg,pEP);
             /* reset step count */
             m_iAccumulatedPullSteps = 0;
-            m_iPullStepNum = 0;
+//             m_iPullStepNum = 0;
             setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
         }
         else
