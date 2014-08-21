@@ -93,6 +93,12 @@ public:
         ss << "./dl_worker " << m_str_sae_configfile.substr(startIndex,m_str_sae_configfile.length() - startIndex);
         ss << " " << data_dir;
         ss << " " << server_addr << " " << server_port;
+        //One slave, set local serial train or para train.
+        if(m_oSlaves.size() == 1)
+        {
+//             ss << " " <<false;// Serial
+            ss << " " << true;// Parallel
+        }
         startMsg->cmd() = ss.str();
         std::cout << "send start Cmd Message!" << std::endl;
         m_oNNFF.send(startMsg, pEP);

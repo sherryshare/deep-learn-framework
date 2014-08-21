@@ -149,7 +149,7 @@ void FBNN::train(const FMatrix& train_x,
     std::cout << "start batch: " << m_ivBatch << std::endl;
 
     setCurrentPullSynchronicStep(0);//Need to pull immediately
-    setCurrentPushSynchronicStep(0);//Attempt to push immediately
+    setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately when default = -1
     if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
     {
         std::cout << "Train without pull for " << m_iAccumulatedPullSteps << " steps."<< std::endl;
@@ -162,7 +162,7 @@ void FBNN::train(const FMatrix& train_x,
         /* reset step count */
         m_iAccumulatedPullSteps = 0;
         m_iPullStepNum = 0;
-        setCurrentPullSynchronicStep(0);//Attempt to pull immediately
+        setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
     }
     else
     {
@@ -192,7 +192,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     (*m_oLp)(m_ivEpoch*m_iBatchNum+m_ivBatch,0) = nnff(batch_x,batch_x);
     nnbp();
     nnapplygrads();
-    if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
+    if(m_iPushStepNum == m_iCurrentPushSynchronicStep && m_iDefaultStepValue < 0)//if not randomly, push right now
     {
         setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly
         m_iPushStepNum = 0;
@@ -212,7 +212,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
         /* reset step count */
         m_iAccumulatedPushSteps = 0;
         m_iPushStepNum = 0;
-        setCurrentPushSynchronicStep(0);//Attempt to push immediately
+        setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately
     }
     else
     {
@@ -231,7 +231,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
     bool retVal = false;
     if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
         std::cout << "start batch: " << m_ivBatch << std::endl;
-        if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
+        if(m_iPullStepNum == m_iCurrentPullSynchronicStep && m_iDefaultStepValue < 0)
         {
             setCurrentPullSynchronicStep(m_iDefaultStepValue);//Attempt to pull randomly
             m_iPullStepNum = 0;
@@ -248,7 +248,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
             /* reset step count */
             m_iAccumulatedPullSteps = 0;
             m_iPullStepNum = 0;
-            setCurrentPullSynchronicStep(0);//Attempt to pull immediately
+            setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
         }
         else
         {

@@ -8,10 +8,8 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc)
     const double learningRate = getLearningRateFromNervureConfigure(pnc);
     const double inputZeroMaskedFraction = getInputZeroMaskedFractionFromNervureConfigure(pnc);
     const int32_t maxSynchronicStep = getMaxSynchronicStepFromNervureConfigure(pnc);
-
     std::cout << activationFunction << "\t" << learningRate << "\t" << inputZeroMaskedFraction << std::endl;
     std::cout << "Max synchronic step = " << maxSynchronicStep << std::endl;
-
     Arch_t sae_arch;
     getArchFromNervureConfigure(pnc,"sae",sae_arch);
 

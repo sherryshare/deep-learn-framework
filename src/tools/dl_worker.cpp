@@ -11,12 +11,15 @@ public:
              const std::string& sae_config_file,
              const std::string& input_data_file,
              const std::string& server_ip,
-             const uint16_t server_port)
+             const uint16_t server_port,
+             const bool bIsPara
+            )
         : m_oNNFF(nnff),
           m_str_sae_configfile(sae_config_file),
           m_str_inputfile(input_data_file),
           m_str_server_ip(server_ip),
           m_u_server_port(server_port),
+          m_b_isPara(bIsPara),
           m_str_pushtimefile("push_time.txt"),
           m_str_pullfimefile("pull_time.txt")
     {}
@@ -44,10 +47,7 @@ public:
                 it->port() == m_u_server_port) {
             m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure(m_str_sae_configfile));
             m_p_sae = SAE_create(m_p_sae_nc);
-            //local serial version
-            SAE_run(false,it);
-            //para version
-//             SAE_run();
+            SAE_run(it);
         }
     }
 
@@ -67,8 +67,7 @@ public:
         std::cout<<"Leaving dl_worker..."<<std::endl;
     }
 
-    bool SAE_run(bool isPara = true, 
-                 const ffnet::EndpointPtr_t& pEP = ffnet::EndpointPtr_t((ffnet::Endpoint* )NULL))
+    bool SAE_run(const ffnet::EndpointPtr_t& pEP)
     {
         FMatrix_ptr train_x = read_matrix_from_dir(m_str_inputfile);
         if(train_x == NULL)
@@ -76,11 +75,15 @@ public:
         *train_x = (*train_x) / 255;
         Opts opts;
         getOptsFromNervureConfigure(m_p_sae_nc,opts);
-        if(isPara)
+        if(m_b_isPara)
         {
             /* para version */
-//             m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime,0);//synchronic in every mini-batch
-            m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime);//random synchronic step
+            const int32_t maxSynchronicStep = getMaxSynchronicStepFromNervureConfigure(m_p_sae_nc);
+            int32_t stepControl = getStepControlFromNervureConfigure(m_p_sae_nc);
+            if(stepControl > maxSynchronicStep)
+                stepControl = maxSynchronicStep;
+            std::cout << "Accepted step control = " << stepControl << std::endl;
+            m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime,stepControl-1);
             /* end para version */
         }
         else
@@ -150,6 +153,7 @@ protected:
     TimePoint m_oEndTime;
     std::vector<std::pair<int,int> > m_iPushDurations;
     std::vector<std::pair<int,int> > m_iPullDurations;
+    bool m_b_isPara;
 };
 
 }//end namespace ff
@@ -170,6 +174,7 @@ int main(int argc, char* argv[])
     std::string input_data_file = globalDirStr;
     std::string server_ip;
     uint16_t server_port;
+    bool bIsPara = true;
     if(argc > 1) {//sae_config_file argc
         std::stringstream ss_argv;
         ss_argv << argv[1];
@@ -198,9 +203,14 @@ int main(int argc, char* argv[])
         ss_argv >> server_port;
     }
     std::cout << "Server " << server_ip << " : " << server_port << std::endl;
+    if(argc > 5) {//bIsPara argc
+        std::stringstream ss_argv;
+        ss_argv << argv[5];
+        ss_argv >> bIsPara;
+    }
 
     ffnet::NetNervureFromFile nnff("../confs/dl_worker_net_conf.ini");
-    DLWorker worker(nnff,sae_config_file,input_data_file,server_ip,server_port);
+    DLWorker worker(nnff,sae_config_file,input_data_file,server_ip,server_port,bIsPara);
 
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLWorker::onConnSucc, &worker, _1));
     nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
