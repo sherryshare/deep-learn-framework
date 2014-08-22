@@ -7,6 +7,9 @@
 #include "dsource/divide.h"
 #include "sae/sae_from_config.h"
 
+DEF_LOG_MODULE(dl_master)
+ENABLE_LOG_MODULE(dl_master)
+
 namespace ff {
 class DLMaster {
 
@@ -76,6 +79,7 @@ public:
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        LOG_TRACE(dl_master) << "Receive FileSendDirAck from " << pEP->address().to_string() << ":" << pEP->port();
         std::string& slave_path = pMsg->dir();
         //So here, slave_path shows the path on slave point, and pEP show the address of slave point.
         file_send(m_str_sae_configfile,pEP->address().to_string(),slave_path);//Send sae config file
@@ -101,12 +105,15 @@ public:
         }
         startMsg->cmd() = ss.str();
         std::cout << "send start Cmd Message!" << std::endl;
+        LOG_TRACE(dl_master) << "Send start Cmd message to " << pEP->address().to_string() << ":" << pEP->port();
         m_oNNFF.send(startMsg, pEP);
     }
 
     void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oStartTime = boost::chrono::system_clock::now();
+        LOG_TRACE(dl_master) << "Receive pull request from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
@@ -116,7 +123,9 @@ public:
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
-        m_oNNFF.send(ackMsg,pEP);
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
+        m_oNNFF.send(ackMsg,pEP);        
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPullHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
@@ -125,6 +134,8 @@ public:
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oStartTime = boost::chrono::system_clock::now();
+        LOG_TRACE(dl_master) << "Receive push request from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
         //set odWs
@@ -133,7 +144,9 @@ public:
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
-        m_oNNFF.send(ackMsg,pEP);
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
+        m_oNNFF.send(ackMsg,pEP);        
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
@@ -142,6 +155,7 @@ public:
 
     void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        LOG_TRACE(dl_master) << "Receive end train message from " << pEP->address().to_string() << ":" << pEP->port();
         std::cout << pEP->address() << ":" << pEP->port();
         std::cout << " node SAE train ends." << std::endl;
         ++m_iEndPretrain;//Every node sends only one end message.
@@ -154,8 +168,9 @@ public:
             {
                 m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
                 train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+                LOG_TRACE(dl_master) << "End training FFNN.";
             }
-        }
+        }        
     }
 
 protected:

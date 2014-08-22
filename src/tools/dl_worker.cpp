@@ -3,6 +3,9 @@
 #include "utils/utils.h"
 #include "sae/sae_from_config.h"
 
+DEF_LOG_MODULE(dl_worker)
+ENABLE_LOG_MODULE(dl_worker)
+
 namespace ff {
 class DLWorker {
 
@@ -103,6 +106,8 @@ public:
     void onRecvPullAck(boost::shared_ptr<PullParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oEndTime = boost::chrono::system_clock::now();
+        LOG_TRACE(dl_worker) << "Receive pull ack from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
         std::cout << "Receive pull ack! Index = " << pMsg->sae_index() << std::endl;
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPullDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
@@ -117,6 +122,8 @@ public:
     void onRecvPushAck(boost::shared_ptr<PushParaAck> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oEndTime = boost::chrono::system_clock::now();
+        LOG_TRACE(dl_worker) << "Receive push ack from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
         std::cout << "Receive push ack! " << pMsg->sae_index() << std::endl;
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPushDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));

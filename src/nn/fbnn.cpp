@@ -152,12 +152,14 @@ void FBNN::train(const FMatrix& train_x,
     setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately when default = -1
     if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
     {
-        std::cout << "Train without pull for " << m_iAccumulatedPullSteps << " steps."<< std::endl;
+        std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
         pullReqMsg->sae_index() = sae_index;
         startTime = boost::chrono::system_clock::now();//pull time clock
+        LOG_TRACE(fbnn) << "Send pull request to " << pEP->address().to_string() << ":" << pEP->port() <<
+                            ", index = " << sae_index;
         ref_NNFF.send(pullReqMsg,pEP);
         /* reset step count */
         m_iAccumulatedPullSteps = 0;
@@ -199,7 +201,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     }
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
     {
-        std::cout << "Train without push for " << m_iAccumulatedPushSteps << " steps."<< std::endl;
+        std::cout << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps."<< std::endl;
         //push under network conditions
         std::cout << "Need to push weights!" << std::endl;
         //set push package
@@ -207,6 +209,8 @@ void FBNN::train_after_pull(const int32_t sae_index,
         copy(get_m_odWs().begin(),get_m_odWs().end(),std::back_inserter(pushReqMsg->dWs()));
         pushReqMsg->sae_index() = sae_index;
         startTime = boost::chrono::system_clock::now();//push time clock
+        LOG_TRACE(fbnn) << "Send push request to " << pEP->address().to_string() << ":" << pEP->port() <<
+                            ", index = " << sae_index;
         ref_NNFF.send(pushReqMsg,pEP);
         ++m_ivBatch;
         /* reset step count */
@@ -238,12 +242,14 @@ bool FBNN::train_after_push(const int32_t sae_index,
         }
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
         {
-            std::cout << "Train without pull for " << m_iAccumulatedPullSteps << " steps."<< std::endl;
+            std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
             //pull under network conditions
             std::cout << "Need to pull weights!" << std::endl;
             boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
             pullReqMsg->sae_index() = sae_index;
             startTime = boost::chrono::system_clock::now();//pull time clock
+            LOG_TRACE(fbnn) << "Send pull request to " << pEP->address().to_string() << ":" << pEP->port() <<
+                            ", index = " << sae_index;
             ref_NNFF.send(pullReqMsg,pEP);
             /* reset step count */
             m_iAccumulatedPullSteps = 0;

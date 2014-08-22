@@ -16,6 +16,10 @@
 
 #include "pkgs/pkgs.h"
 
+
+DEF_LOG_MODULE(fbnn)//log
+ENABLE_LOG_MODULE(fbnn)
+
 namespace ff
 {
 /* This class represents Feedforward Backpropagate Neural Network
@@ -126,7 +130,7 @@ public:
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    inline void setCurrentPushSynchronicStep(int32_t step = -1) {//set before push
+    void setCurrentPushSynchronicStep(int32_t step = -1) {//set before push      
         if(step == -1)
             m_iCurrentPushSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
         else
@@ -134,6 +138,8 @@ public:
         int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPushSteps;
         if(m_iCurrentPushSynchronicStep > deltaSteps)
             m_iCurrentPushSynchronicStep = deltaSteps;
+        if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPushSynchronicStep > m_iBatchNum - m_ivBatch)// last epoch
+            m_iCurrentPushSynchronicStep = m_iBatchNum - m_ivBatch - 1;
         m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
         m_iPushStepNum = 0;//reset
     }
