@@ -138,7 +138,7 @@ public:
         int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPushSteps;
         if(m_iCurrentPushSynchronicStep > deltaSteps)
             m_iCurrentPushSynchronicStep = deltaSteps;
-        if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPushSynchronicStep > m_iBatchNum - m_ivBatch)// last epoch
+        if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPushSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
             m_iCurrentPushSynchronicStep = m_iBatchNum - m_ivBatch - 1;
         m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
         m_iPushStepNum = 0;//reset
