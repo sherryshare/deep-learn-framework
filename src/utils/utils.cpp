@@ -50,9 +50,26 @@ bool recordDurationTime(std::vector<std::pair<int,int> >& recordVec,const std::s
     }
     else {
         std::cout << "Write file: " << outFileName << std::endl;
+        std::vector<std::pair<long long, int> > sumDuration;
+        int index = -1;
         for(std::vector<std::pair<int,int> >::iterator iter = recordVec.begin(); iter!= recordVec.end(); ++iter)
         {
             output_file << iter->first << "\t" << iter->second << std::endl;
+            if(iter->first == index)
+            {
+                sumDuration[index].first += iter->second;
+                ++sumDuration[index].second;
+            }
+            else
+            {
+                ++index;
+                sumDuration.push_back(std::make_pair<long long, int>(iter->second, 1));
+            }            
+        }
+        output_file << "Average duration:(ms)" << std::endl;
+        for(int i = 0; i < sumDuration.size(); ++i)
+        {
+            output_file << i << "\t" << 1.0 * sumDuration[i].first / sumDuration[i].second << std::endl;
         }
     }
     output_file.close();
