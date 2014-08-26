@@ -61,6 +61,7 @@ void FBNN::train(const FMatrix& train_x,
 //       std::cout << "numpochs = " << opts.numpochs << std::endl;
     for(int32_t i = 0; i < opts.numpochs; ++i)
     {
+        LOG_TRACE(fbnn) << "Start epoch: " << i;
         std::cout << "start numpochs " << i << std::endl;
         boost::chrono::time_point<boost::chrono::system_clock> start, end;
         start = boost::chrono::system_clock::now();
@@ -69,6 +70,7 @@ void FBNN::train(const FMatrix& train_x,
         std::cout << "start batch: ";
         for(int32_t j = 0; j < ibatchNum; ++j)
         {
+            LOG_TRACE(fbnn) << "Start batch: " << j;
             std::cout << " " << j;
             int32_t curBatchSize = opts.batchsize;
             if(j == ibatchNum - 1 && train_x.rows() % opts.batchsize != 0)
@@ -89,22 +91,28 @@ void FBNN::train(const FMatrix& train_x,
             nnbp();
             nnapplygrads();
 // 	      std::cout << "end batch " << j << std::endl;
+            LOG_TRACE(fbnn) << "End batch: " << j;
         }
         std::cout << std::endl;
         end = boost::chrono::system_clock::now();
         int elapsedTime = boost::chrono::duration_cast<boost::chrono::minutes>
                           (end-start).count();
+        LOG_TRACE(fbnn) << "End epoch: " << i;
         //loss calculate use nneval
         if(valid_x.rows() == 0 || valid_y.rows() == 0) {
             nneval(loss, train_x, train_y);
             std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
+            LOG_TRACE(fbnn) << "Full-batch train mse = " << loss.train_error.back();
         }
         else {
             nneval(loss, train_x, train_y, valid_x, valid_y);
             std::cout << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back() << std::endl;
+            LOG_TRACE(fbnn) << "Full-batch train mse = " << loss.train_error.back() << " , val mse = " << loss.valid_error.back();
         }
         std::cout << "epoch " << i+1 << " / " <<  opts.numpochs << " took " << elapsedTime << " minites." << std::endl;
-        std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(*m_oLp,i*ibatchNum,0UL,ibatchNum,m_oLp->columns())) << std::endl;
+        FMatrix meanSquaredError = columnMean(submatrix(*m_oLp,i*ibatchNum,0UL,ibatchNum,m_oLp->columns()));
+        std::cout << "Mini-batch mean squared error on training set is " << meanSquaredError << std::endl;
+        LOG_TRACE(fbnn) << "Mini-batch mean squared error on training set is " << meanSquaredError(0,0);
         m_fLearningRate *= m_fScalingLearningRate;
 // 	  std::cout << "end numpochs " << i << std::endl;
     }
@@ -133,26 +141,23 @@ void FBNN::train(const FMatrix& train_x,
     m_iDefaultStepValue = defaultSynchronicStep;
     m_iAccumulatedPullSteps = 0;
     m_iAccumulatedPushSteps = 0;
-//     m_iPullStepNum = 0;
-//     m_iPushStepNum = 0;
     /* end initialize step count */
     m_iBatchNum = m_opTrain_x->rows() / m_sOpts.batchsize + (m_opTrain_x->rows() % m_sOpts.batchsize != 0);
     std::cout << "Total batch num = " << m_iBatchNum << std::endl;
     m_oLp = FMatrix_ptr(new FMatrix(m_sOpts.numpochs * m_iBatchNum, 1));
-//       std::cout << "numpochs = " << m_sOpts.numpochs << std::endl;
     m_ivEpoch = 0;
     std::cout << "start numpochs " << m_ivEpoch << std::endl;
-    //int32_t elapsedTime...
     randperm(m_opTrain_x->rows(),m_oRandVec);
-//     std::cout << "start batch: ";
     m_ivBatch = 0;
+    LOG_TRACE(fbnn) << "Start epoch: " << m_ivEpoch;
+    LOG_TRACE(fbnn) << "Start batch: " << m_ivBatch;
     std::cout << "start batch: " << m_ivBatch << std::endl;
-
     setCurrentPullSynchronicStep(0);//Need to pull immediately
     setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately when default = -1
     if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
     {
         std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
+        LOG_TRACE(fbnn) << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps.";
         //pull under network conditions
         std::cout << "Need to pull weights!" << std::endl;
         boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
@@ -194,6 +199,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     (*m_oLp)(m_ivEpoch*m_iBatchNum+m_ivBatch,0) = nnff(batch_x,batch_x);
     nnbp();
     nnapplygrads();
+    LOG_TRACE(fbnn) << "End batch: " << m_ivBatch;
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep && m_iDefaultStepValue < 0)//if not randomly, push right now
     {
         setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly
@@ -201,6 +207,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
     }
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
     {
+        LOG_TRACE(fbnn) << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps.";
         std::cout << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps."<< std::endl;
         //push under network conditions
         std::cout << "Need to push weights!" << std::endl;
@@ -234,6 +241,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
 {
     bool retVal = false;
     if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
+        LOG_TRACE(fbnn) << "Start batch: " << m_ivBatch;
         std::cout << "start batch: " << m_ivBatch << std::endl;
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep && m_iDefaultStepValue < 0)
         {
@@ -242,6 +250,7 @@ bool FBNN::train_after_push(const int32_t sae_index,
         }
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
         {
+            LOG_TRACE(fbnn) << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps.";
             std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
             //pull under network conditions
             std::cout << "Need to pull weights!" << std::endl;
@@ -263,28 +272,30 @@ bool FBNN::train_after_push(const int32_t sae_index,
         }
     }
     else if(m_ivEpoch < m_sOpts.numpochs) {
-//         std::cout << std::endl;
-        //std::cout << "elapsed time: " << elapsedTime << "s" << std::endl;
         //loss calculate use nneval
         nneval(m_oLoss, *m_opTrain_x, *m_opTrain_x);
         std::cout << "Full-batch train mse = " << m_oLoss.train_error.back() << std::endl;
-        //std::cout << "epoch " << m_ivEpoch+1 << " / " <<  m_sOpts.numpochs << " took " << elapsedTime << " seconds." << std::endl;
-        std::cout << "Mini-batch mean squared error on training set is " << columnMean(submatrix(*m_oLp,m_ivEpoch*m_iBatchNum,0UL,m_iBatchNum,m_oLp->columns())) << std::endl;
+        LOG_TRACE(fbnn) << "Full-batch train mse = " << m_oLoss.train_error.back();
+        FMatrix meanSquaredError = columnMean(submatrix(*m_oLp,m_ivEpoch*m_iBatchNum,0UL,m_iBatchNum,m_oLp->columns()));
+        std::cout << "Mini-batch mean squared error on training set is " << meanSquaredError << std::endl;
+        LOG_TRACE(fbnn) << "Mini-batch mean squared error on training set is " << meanSquaredError(0,0);
         m_fLearningRate *= m_fScalingLearningRate;
         std::cout << "end numpochs " << m_ivEpoch << std::endl;
+        LOG_TRACE(fbnn) << "End epoch: " << m_ivEpoch;
         ++m_ivEpoch;
         if(m_ivEpoch < m_sOpts.numpochs)
         {
             m_ivBatch = 0;//reset for next epoch loop
             std::cout << "start numpochs " << m_ivEpoch << std::endl;
+            LOG_TRACE(fbnn) << "Start epoch: " << m_ivEpoch;
             //int32_t elapsedTime...
             randperm(m_opTrain_x->rows(),m_oRandVec);
-//             std::cout << "start batch: ";
         }
         retVal = train_after_push(sae_index,ref_NNFF,pEP,startTime);
     }
     else {
         std::cout << "End fbnn training!" << std::endl;
+        LOG_TRACE(fbnn) << "End fbnn training!";
         retVal = true;
     }
     return retVal;
