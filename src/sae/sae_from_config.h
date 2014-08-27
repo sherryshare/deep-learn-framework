@@ -13,6 +13,7 @@ SAE_ptr SAE_create(const NervureConfigurePtr& pnc);
 bool SAE_run(const SAE_ptr& psae,
              const std::string& data_dir, 
              const NervureConfigurePtr& pnc);
+bool test_SAE(const SAE_ptr& psae, const NervureConfigurePtr& pnc);
 void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc);
 
 inline const double getLearningRateFromNervureConfigure(const NervureConfigurePtr& pnc) {

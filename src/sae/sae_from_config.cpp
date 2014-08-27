@@ -44,7 +44,7 @@ void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
 }
 
 bool SAE_run(const SAE_ptr& psae,
-             const std::string& data_dir, 
+             const std::string& data_dir,
              const NervureConfigurePtr& pnc)
 {
     FMatrix_ptr train_x = read_matrix_from_dir(data_dir);
@@ -54,6 +54,21 @@ bool SAE_run(const SAE_ptr& psae,
     Opts opts;
     getOptsFromNervureConfigure(pnc,opts);
     psae->SAETrain(*train_x,opts);
+    return true;
+}
+
+bool test_SAE(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
+{
+    const std::string input_file = getInputFileNameFromNervureConfigure(pnc);
+    FMatrix_ptr train_x = read_train_x(input_file);
+    if(train_x == NULL)
+        return false;
+    *train_x = (*train_x) / 255;
+    //add for quick test
+//     *train_x = submatrix(*train_x,0UL,0UL,20,train_x->columns());
+    Opts opts;
+    getOptsFromNervureConfigure(pnc,opts);
+    psae->SAETest(*train_x,opts);
     return true;
 }
 

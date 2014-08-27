@@ -35,12 +35,37 @@ void SAE::SAETrain(const FMatrix& train_x, const Opts& opts)
         std::cout << "Training AE " << i+1 << " / " << num_ae << ", ";
         std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
         m_oAEs[i]->train(x, x, opts);
-        m_oAEs[i]->nnff(x, x);
-        x = *(m_oAEs[i]->get_m_oAs())[1];
-        x = delPreColumn(x);
+        if(i < num_ae - 1)//No need to get output from last level
+        {
+            m_oAEs[i]->nnff(x, x);
+            x = *(m_oAEs[i]->get_m_oAs())[1];
+            x = delPreColumn(x);
+        }
     }
     std::cout << "End training SAE." << std::endl;
 }
+
+void SAE::SAETest(const FMatrix& train_x, const Opts& opts)
+{
+    std::cout << "Start testing SAE." << std::endl;
+    size_t num_ae = m_oAEs.size();
+    FMatrix x = train_x;
+    for( size_t i = 0; i < num_ae; ++i)
+    {
+        std::cout << "Testing AE " << i+1 << " / " << num_ae << ", ";
+        std::cout << "x = (" << x.rows() << ", " << x.columns() << ")"<< std::endl;
+        m_oAEs[i]->AEtest(x,opts);
+        if(i < num_ae - 1)//No need to get output from last level
+        {
+            m_oAEs[i]->nnff(x, x);
+            x = *(m_oAEs[i]->get_m_oAs())[1];
+            x = delPreColumn(x);
+        }
+    }
+    std::cout << "End testing SAE." << std::endl;
+}
+
+
 
 void SAE::SAETrain(const FMatrix& train_x,
                    const Opts& opts,
@@ -57,7 +82,7 @@ void SAE::SAETrain(const FMatrix& train_x,
     m_sOpts = opts;
     std::cout << "Training AE " << m_iAEIndex+1 << " / " << m_oAEs.size() << ", ";
     std::cout << "x = (" << m_pTrain_x->rows() << ", " << m_pTrain_x->columns() << ")"<< std::endl;
-    m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, 
+    m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP,
                               m_iAEIndex, startTime, m_iDefaultSynchronicStep);
 }
 
@@ -67,15 +92,18 @@ bool SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
                             )
 {
 //     std::cout << "Start train_after_end_AE:" << std::endl;
-    m_oAEs[m_iAEIndex]->nnff(*m_pTrain_x, *m_pTrain_x);
-    m_pTrain_x = (m_oAEs[m_iAEIndex]->get_m_oAs())[1];
-    m_pTrain_x = FMatrix_ptr(new FMatrix(delPreColumn(*m_pTrain_x)));
+    if(m_iAEIndex < m_oAEs.size() - 1)//No need to get output from last level
+    {
+        m_oAEs[m_iAEIndex]->nnff(*m_pTrain_x, *m_pTrain_x);
+        m_pTrain_x = (m_oAEs[m_iAEIndex]->get_m_oAs())[1];
+        m_pTrain_x = FMatrix_ptr(new FMatrix(delPreColumn(*m_pTrain_x)));
+    }
     ++m_iAEIndex;
     if(m_iAEIndex < m_oAEs.size())
     {
         std::cout << "Training AE " << m_iAEIndex+1 << " / " << m_oAEs.size() << ", ";
         std::cout << "x = (" << m_pTrain_x->rows() << ", " << m_pTrain_x->columns() << ")"<< std::endl;
-        m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP, 
+        m_oAEs[m_iAEIndex]->train(*m_pTrain_x, m_sOpts, ref_NNFF, pEP,
                                   m_iAEIndex,startTime, m_iDefaultSynchronicStep);
 //         std::cout << "End train_after_end_AE." << std::endl;
     }
@@ -85,7 +113,7 @@ bool SAE::train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
         std::cout << "End training SAE." << std::endl;
         return true;
     }
-    return false;    
+    return false;
 }
 
 

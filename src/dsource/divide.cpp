@@ -2,7 +2,7 @@
 
 namespace ff {
 
-static FMatrix_ptr read_train_x(const std::string& input_file)
+FMatrix_ptr read_train_x(const std::string& input_file)
 {
     FMatrix_ptr res = FMatrix_ptr((FMatrix*)NULL);
     mat_t *mat = NULL;

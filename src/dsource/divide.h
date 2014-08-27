@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 
 namespace ff {
+FMatrix_ptr read_train_x(const std::string& input_file);
 FMatrix_ptr read_matrix_from_file(const std::string&  file_name);
 FMatrix_ptr read_matrix_from_dir(const std::string&  dir);
 bool divide_into_files(const int parts,

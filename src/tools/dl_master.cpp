@@ -164,6 +164,9 @@ public:
             std::cout << "Ready to train a FFNN." << std::endl;
             recordDurationTime(m_iPullHandleDurations,m_str_pullhandlefile);
             recordDurationTime(m_iPushHandleDurations,m_str_pushhandlefile);
+            //test SAE error rate
+            test_SAE(m_p_sae,m_p_sae_nc);
+            //train FFNN
             if(pMsg->startNNTrain())//1 slave run alone
             {
                 m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));

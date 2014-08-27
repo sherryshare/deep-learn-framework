@@ -118,6 +118,9 @@ public:
     void train(const FMatrix& train_x,
                const FMatrix& train_y ,
                const Opts& opts);
+    
+    void AEtest(const FMatrix& train_x,
+               const Opts& opts);
     double nnff(const FMatrix& x, const FMatrix& y);
     void nnbp(void);
     void nnapplygrads(void);
@@ -174,7 +177,7 @@ protected:
 //       static constexpr double      m_fInputZeroMaskedFraction = 0;
     static const double      m_fDropoutFraction;
 //       static constexpr double      m_fTesting = 0;
-    bool      m_fTesting;//shall be changed during nnpredict()
+    bool      m_bTesting;//shall be changed during nnpredict()
     const std::string m_strOutput;
 
     std::vector<FMatrix_ptr>  m_oWs;

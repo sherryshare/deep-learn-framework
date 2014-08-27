@@ -34,6 +34,7 @@ public:
                             const ffnet::EndpointPtr_t& pEP,
                             TimePoint& startTime
                            );
+    void SAETest(const FMatrix& train_x, const Opts& opts);
     const std::vector<FBNN_ptr>& get_m_oAEs(void) const {
         return m_oAEs;
     };

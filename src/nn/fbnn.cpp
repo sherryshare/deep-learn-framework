@@ -23,7 +23,7 @@ FBNN::FBNN(const Arch_t& arch,
     , m_fLearningRate(learningRate)
     , m_fInputZeroMaskedFraction(zeroMaskedFraction)
     , m_iMaxSynchronicStep(maxSynchronicStep)
-    , m_fTesting(testing)
+    , m_bTesting(testing)
     , m_strOutput(outputStr)
 
 {
@@ -164,7 +164,7 @@ void FBNN::train(const FMatrix& train_x,
         pullReqMsg->sae_index() = sae_index;
         startTime = boost::chrono::system_clock::now();//pull time clock
         LOG_TRACE(fbnn) << "Send pull request to " << pEP->address().to_string() << ":" << pEP->port() <<
-                            ", index = " << sae_index;
+                        ", index = " << sae_index;
         ref_NNFF.send(pullReqMsg,pEP);
         /* reset step count */
         m_iAccumulatedPullSteps = 0;
@@ -217,7 +217,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
         pushReqMsg->sae_index() = sae_index;
         startTime = boost::chrono::system_clock::now();//push time clock
         LOG_TRACE(fbnn) << "Send push request to " << pEP->address().to_string() << ":" << pEP->port() <<
-                            ", index = " << sae_index;
+                        ", index = " << sae_index;
         ref_NNFF.send(pushReqMsg,pEP);
         ++m_ivBatch;
         /* reset step count */
@@ -312,7 +312,7 @@ double FBNN::nnff(const FMatrix& x, const FMatrix& y)
             m_oAs.push_back(FMatrix_ptr(new FMatrix()));
     }
     *m_oAs[0] = addPreColumn(x,1);
-    if(double_larger_than_zero(m_fDropoutFraction) && !m_fTesting)
+    if(double_larger_than_zero(m_fDropoutFraction) && !m_bTesting)
     {
         if(m_odOMs.empty())//clear dropOutMask
         {
@@ -341,7 +341,7 @@ double FBNN::nnff(const FMatrix& x, const FMatrix& y)
         //dropout
         if(double_larger_than_zero(m_fDropoutFraction))
         {
-            if(m_fTesting)
+            if(m_bTesting)
                 *m_oAs[i] = (*m_oAs[i]) * (1 - m_fDropoutFraction);
             else
             {
@@ -504,7 +504,7 @@ void ff::FBNN::nneval(Loss& loss,
                       const FMatrix& valid_y)
 {
 //     std::cout << "start nneval" << std::endl;
-    m_fTesting = true;
+    m_bTesting = true;
     //training performance
     loss.train_error.push_back(nnff(train_x,train_y));
 
@@ -512,7 +512,7 @@ void ff::FBNN::nneval(Loss& loss,
     if(valid_x.rows() != 0 && valid_y.rows() != 0)
         loss.valid_error.push_back(nnff(valid_x,valid_y));
 
-    m_fTesting = false;
+    m_bTesting = false;
     //calc misclassification rate if softmax
     if(m_strOutput == "softmax")
     {
@@ -522,6 +522,16 @@ void ff::FBNN::nneval(Loss& loss,
     }
 //     std::cout << "end nneval" << std::endl;
 }
+
+void FBNN::AEtest(const FMatrix& train_x, const Opts& opts)
+{
+    Loss loss;
+    LOG_TRACE(fbnn) << "Start AEtest.";
+    nneval(loss, train_x, train_x);
+    std::cout << "Full-batch train mse = " << loss.train_error.back() << std::endl;
+    LOG_TRACE(fbnn) << "Full-batch train mse = " << loss.train_error.back();
+}
+
 
 void ff::FBNN::nneval(Loss& loss, const FMatrix& train_x, const FMatrix& train_y)
 {
@@ -543,9 +553,9 @@ double ff::FBNN::nntest(const FMatrix& x, const FMatrix& y)
 void ff::FBNN::nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels)
 {
 //     std::cout << "start nnpredict" << std::endl;
-    m_fTesting = true;
+    m_bTesting = true;
     nnff(x,zeros(x.rows(),m_oArch[m_iN - 1]));
-    m_fTesting = false;
+    m_bTesting = false;
     labels = rowMaxIndexes(*m_oAs[m_iN - 1]);
 //     std::cout << "end nnpredict" << std::endl;
 }
