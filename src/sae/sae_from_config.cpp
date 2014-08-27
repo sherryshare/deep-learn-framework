@@ -109,17 +109,23 @@ void train_NN(const SAE_ptr& psae, const NervureConfigurePtr& pnc)
             std::cout << "P[" << j << "] = {" << m_oPs[j]->rows() << ", " << m_oPs[j]->columns() << "}" << std::endl;
     }
 
-    for(int i = 0; i < m_oWs.size() - 1; ++i)
+    if(NULL != psae)
     {
-        if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
-                m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
+        for(int i = 0; i < m_oWs.size() - 1; ++i)
         {
-            std::cout << "FFNN structure doesn't match SAE structure! Train by default value from level " << i << "..." << std::endl;
-            break;
+            if(m_oWs[i]->rows() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->rows() ||
+                    m_oWs[i]->columns() != (psae->get_m_oAEs()[i]->get_m_oWs())[0]->columns() )
+            {
+                std::cout << "FFNN structure doesn't match SAE structure! Train by default value from level " << i << "..." << std::endl;
+                break;
+            }
+            nn.set_m_oWs_column((psae->get_m_oAEs()[i]->get_m_oWs())[0],i);//nn.W{i} = sae.ae{i}.W{1};
         }
-        nn.set_m_oWs_column((psae->get_m_oAEs()[i]->get_m_oWs())[0],i);//nn.W{i} = sae.ae{i}.W{1};
     }
 
+    if(NULL == psae)//test only once
+        opts.numpochs = 1;
+    
     //Train the FFNN
     nn.train(*d.train_x,*d.train_y,opts);
     double error = nn.nntest(*d.test_x,*d.test_y);

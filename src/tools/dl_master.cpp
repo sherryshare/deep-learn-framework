@@ -72,9 +72,14 @@ public:
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),".");
         m_p_sae = SAE_create(m_p_sae_nc);
-//         SAE_run(m_p_sae,output_dir,m_p_sae_nc);
-//         m_p_fbnn_nc = std::make_shared<ffnet::NervureConfigure>(ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-//         train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
+        //test SAE default error rate
+        LOG_TRACE(dl_master) << "Test SAE default error rate.";
+        test_SAE(m_p_sae,m_p_sae_nc);
+        //train NN with random init value
+        LOG_TRACE(dl_master) << "Test FFNN default error rate.";
+        m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+        train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
+        LOG_TRACE(dl_master) << "End test FFNN default error rate.";
     }
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
@@ -112,8 +117,8 @@ public:
     void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oStartTime = boost::chrono::system_clock::now();
-        LOG_TRACE(dl_master) << "Receive pull request from " << pEP->address().to_string() << ":" << pEP->port() << 
-                            ", index = " << pMsg->sae_index();
+        LOG_TRACE(dl_master) << "Receive pull request from " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive pull request index = " << pMsg->sae_index() << std::endl;
         boost::shared_ptr<PullParaAck> ackMsg(new PullParaAck());
@@ -123,9 +128,9 @@ public:
         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
-        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() << 
-                            ", index = " << pMsg->sae_index();
-        m_oNNFF.send(ackMsg,pEP);        
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index();
+        m_oNNFF.send(ackMsg,pEP);
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPullHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
@@ -134,8 +139,8 @@ public:
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         m_oStartTime = boost::chrono::system_clock::now();
-        LOG_TRACE(dl_master) << "Receive push request from " << pEP->address().to_string() << ":" << pEP->port() << 
-                            ", index = " << pMsg->sae_index();
+        LOG_TRACE(dl_master) << "Receive push request from " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index();
         std::cout << "From " << pEP->address() << ":" << pEP->port() << std::endl;
         std::cout << "Receive push request index = " << pMsg->sae_index() << std::endl;
         //set odWs
@@ -144,9 +149,9 @@ public:
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
         ackMsg->sae_index() = pMsg->sae_index();
-        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() << 
-                            ", index = " << pMsg->sae_index();
-        m_oNNFF.send(ackMsg,pEP);        
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index();
+        m_oNNFF.send(ackMsg,pEP);
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
@@ -173,7 +178,7 @@ public:
                 train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
                 LOG_TRACE(dl_master) << "End training FFNN.";
             }
-        }        
+        }
     }
 
 protected:
