@@ -93,6 +93,9 @@ public:
         system(pMsg->cmd().c_str());
         std::cout << "Leaving " << processName << " process..." << std::endl;
         std::cout << "-------------------------------" << std::endl;
+        stop();
+        m_oNNFF.stop();
+        std::cout<<"Stopping, please wait..."<<std::endl;
     }
 
 protected:
@@ -104,14 +107,14 @@ protected:
 }//end namespace ff
 
 using namespace ff;
-void  press_and_stop(ffnet::NetNervureFromFile& nnff, Slave& s)
-{
-    std::cout<<"Press any key to quit..."<<std::endl;
-    std::cin.get();
-    s.stop();
-    nnff.stop();
-    std::cout<<"Stopping, please wait..."<<std::endl;
-}
+// void  press_and_stop(ffnet::NetNervureFromFile& nnff, Slave& s)
+// {
+//     std::cout<<"Press any key to quit..."<<std::endl;
+//     std::cin.get();
+//     s.stop();
+//     nnff.stop();
+//     std::cout<<"Stopping, please wait..."<<std::endl;
+// }
 
 
 int main(int argc, char* argv[])
@@ -130,9 +133,9 @@ int main(int argc, char* argv[])
 
     t.async_wait(boost::bind(&Slave::onTimerSendHearBeat, &s,
                              boost::asio::placeholders::error, &t));
-    boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff), boost::ref(s)));
+//     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff), boost::ref(s)));
 
     nnff.run();
-    monitor_thrd.join();
+//     monitor_thrd.join();
     return 0;
 }

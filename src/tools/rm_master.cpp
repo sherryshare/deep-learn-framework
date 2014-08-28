@@ -60,8 +60,8 @@ protected:
 using namespace ff;
 void  press_and_stop(ffnet::NetNervureFromFile& nnff, RMMaster& master)
 {
-    std::cout<<"Press any key to quit..."<<std::endl;
-    getc(stdin);
+    std::cout<<"Press Q to quit..."<<std::endl;
+    while(getc(stdin)!='Q');
     master.stop();
     nnff.stop();
     std::cout<<"Stopping, please wait..."<<std::endl;
