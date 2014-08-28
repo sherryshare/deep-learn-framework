@@ -547,7 +547,9 @@ double ff::FBNN::nntest(const FMatrix& x, const FMatrix& y)
     FColumn expected = rowMaxIndexes(y);
     std::vector<int32_t> bad = findUnequalIndexes(labels,expected);
 //     std::cout << "end nntest" << std::endl;
-    return double(bad.size()) / x.rows();//Haven't return bad vector.(nntest.m does)
+    double error = double(bad.size()) / x.rows();
+    LOG_TRACE(fbnn) << "test error = " << error;
+    return error;//Haven't return bad vector.(nntest.m does)
 }
 
 void ff::FBNN::nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels)
