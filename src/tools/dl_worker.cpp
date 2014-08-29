@@ -97,6 +97,7 @@ public:
             m_oEndTime = boost::chrono::system_clock::now();
             int duration_time = boost::chrono::duration_cast<boost::chrono::minutes>(m_oEndTime-m_oStartTime).count();
             std::cout << "Duration time = " << duration_time << "min" << std::endl;
+            test_SAE(m_p_sae,m_p_sae_nc);
             FBNN_run(pEP);
             /* end serial version */
         }
