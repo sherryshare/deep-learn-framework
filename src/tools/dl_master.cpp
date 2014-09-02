@@ -155,7 +155,15 @@ public:
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
-//         std::cout << "Send push ack!" << std::endl;
+        
+        //test SAE error rate after push
+        LOG_TRACE(dl_master) << "Test SAE error rate ";
+        test_SAE(m_p_sae,m_p_sae_nc);
+        //train NN with random init value
+        LOG_TRACE(dl_master) << "Test FFNN error rate after push.";
+//         m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+        train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
+        LOG_TRACE(dl_master) << "End test FFNN error rate after push.";
     }
 
     void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
