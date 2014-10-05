@@ -133,7 +133,7 @@ public:
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    void setCurrentPushSynchronicStep(int32_t step = -1) {//set before push      
+    void setCurrentPushSynchronicStep(int32_t step = -1); /*{//set before push      
         if(step == -1)
             m_iCurrentPushSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
         else
@@ -145,9 +145,9 @@ public:
             m_iCurrentPushSynchronicStep = m_iBatchNum - m_ivBatch - 1;
         m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
         m_iPushStepNum = 0;//reset
-    }
+    }*/
 
-    inline void setCurrentPullSynchronicStep(int32_t step = -1) {//set before pull
+    void setCurrentPullSynchronicStep(int32_t step = -1); /*{//set before pull
         if(step == -1)
             m_iCurrentPullSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
         else
@@ -155,9 +155,11 @@ public:
         int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPullSteps;
         if(m_iCurrentPullSynchronicStep > deltaSteps)
             m_iCurrentPullSynchronicStep = deltaSteps;
+        if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPullSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
+            m_iCurrentPullSynchronicStep = m_iBatchNum - m_ivBatch - 1;
         m_iAccumulatedPullSteps += m_iCurrentPullSynchronicStep;
         m_iPullStepNum = 0;//reset
-    }
+    }*/
 
 //     RWMutex m_g_odWsMutex;
 //     RWMutex m_g_oWsMutex;

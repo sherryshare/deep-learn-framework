@@ -72,6 +72,7 @@ public:
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),".");
         m_p_sae = SAE_create(m_p_sae_nc);
+ /*       
         //test SAE default error rate
         LOG_TRACE(dl_master) << "Test SAE default error rate.";
         test_SAE(m_p_sae,m_p_sae_nc);
@@ -80,6 +81,7 @@ public:
         m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
         train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
         LOG_TRACE(dl_master) << "End test FFNN default error rate.";
+        */
     }
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
@@ -125,9 +127,9 @@ public:
         ackMsg->sae_index() = pMsg->sae_index();
         //get current parameters from server
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
-        const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
+//         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
-        copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
+//         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
         LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
                              ", index = " << pMsg->sae_index();
         m_oNNFF.send(ackMsg,pEP);
@@ -156,7 +158,7 @@ public:
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPushHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
         bool bTestAfterPush = false;
-        bTestAfterPush = true;//Annotate if needn't test
+//         bTestAfterPush = true;//Annotate if needn't test
         if(m_oSlaves.size() == 1 && bTestAfterPush)
         {
             //test SAE error rate after push
@@ -181,6 +183,7 @@ public:
             std::cout << "Ready to train a FFNN." << std::endl;
             recordDurationTime(m_iPullHandleDurations,m_str_pullhandlefile);
             recordDurationTime(m_iPushHandleDurations,m_str_pushhandlefile);
+            /*
             //test SAE error rate
             test_SAE(m_p_sae,m_p_sae_nc);
             //train FFNN
@@ -189,7 +192,7 @@ public:
                 m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
                 train_NN(m_p_sae,m_p_fbnn_nc);//train a final fbnn after pretraining
                 LOG_TRACE(dl_master) << "End training FFNN.";
-            }
+            }*/
         }
     }
 

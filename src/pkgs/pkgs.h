@@ -209,12 +209,12 @@ public:
             {
                 serialize_FMatrix(ar,m_oWs[i]);
             }
-            len = m_oVWs.size();
+            /*len = m_oVWs.size();
             ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
                 serialize_FMatrix(ar,m_oVWs[i]);
-            }            
+            }       */     
         }
         if(ar.is_deserializer())
         {     
@@ -225,11 +225,11 @@ public:
             {
                 m_oWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
             }
-            ar.archive(len);
+            /*ar.archive(len);
             for(int32_t i = 0; i < len; ++i)
             {
                 m_oVWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
-            }            
+            }      */      
         }
     }
 
@@ -245,17 +245,17 @@ public:
     std::vector<FMatrix_ptr>& Ws() {
         return m_oWs;
     };
-    const std::vector<FMatrix_ptr>& VWs() const {
-        return m_oVWs;
-    };
-    std::vector<FMatrix_ptr>& VWs() {
-        return m_oVWs;
-    };
+//     const std::vector<FMatrix_ptr>& VWs() const {
+//         return m_oVWs;
+//     };
+//     std::vector<FMatrix_ptr>& VWs() {
+//         return m_oVWs;
+//     };
 
 protected:
     int32_t m_u_sae_index;
     std::vector<FMatrix_ptr>  m_oWs;
-    std::vector<FMatrix_ptr>  m_oVWs;
+//     std::vector<FMatrix_ptr>  m_oVWs;
 };
 
 class PushParaReq: public ffnet::Package

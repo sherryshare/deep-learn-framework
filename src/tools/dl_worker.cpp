@@ -116,7 +116,7 @@ public:
 //         for(int i = 0; i < pMsg->Ws().size(); ++i)
 //             std::cout << pMsg->Ws()[i]->operator()(0,0) << std::endl;
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oWs(pMsg->Ws());
-        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
+//         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->set_m_oVWs(pMsg->VWs());
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull(pMsg->sae_index(),m_oNNFF,m_oDLMaster,m_oStartTime);
     }
 

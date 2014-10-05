@@ -213,7 +213,7 @@ void FBNN::train_after_pull(const int32_t sae_index,
         std::cout << "Need to push weights!" << std::endl;
         //set push package
         boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
-        copy(get_m_odWs().begin(),get_m_odWs().end(),std::back_inserter(pushReqMsg->dWs()));
+        copy(get_m_oVWs().begin(),get_m_oVWs().end(),std::back_inserter(pushReqMsg->dWs()));
         pushReqMsg->sae_index() = sae_index;
         startTime = boost::chrono::system_clock::now();//push time clock
         LOG_TRACE(fbnn) << "Send push request to " << pEP->address().to_string() << ":" << pEP->port() <<
@@ -231,6 +231,34 @@ void FBNN::train_after_pull(const int32_t sae_index,
         ++m_iPushStepNum;
         train_after_push(sae_index,ref_NNFF,pEP,startTime);
     }
+}
+
+void FBNN::setCurrentPushSynchronicStep(int32_t step) {//set before push
+    if(step == -1)
+        m_iCurrentPushSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
+    else
+        m_iCurrentPushSynchronicStep = step;
+    int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPushSteps;
+    if(m_iCurrentPushSynchronicStep > deltaSteps)
+        m_iCurrentPushSynchronicStep = deltaSteps;
+    if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPushSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
+        m_iCurrentPushSynchronicStep = m_iBatchNum - m_ivBatch - 1;
+    m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
+    m_iPushStepNum = 0;//reset
+}
+
+void FBNN::setCurrentPullSynchronicStep(int32_t step) {//set before pull
+    if(step == -1)
+        m_iCurrentPullSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
+    else
+        m_iCurrentPullSynchronicStep = step;
+    int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPullSteps;
+    if(m_iCurrentPullSynchronicStep > deltaSteps)
+        m_iCurrentPullSynchronicStep = deltaSteps;
+    if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPullSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
+        m_iCurrentPullSynchronicStep = m_iBatchNum - m_ivBatch - 1;
+    m_iAccumulatedPullSteps += m_iCurrentPullSynchronicStep;
+    m_iPullStepNum = 0;//reset
 }
 
 bool FBNN::train_after_push(const int32_t sae_index,
