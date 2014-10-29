@@ -132,13 +132,15 @@ void FBNN::train(const FMatrix& train_x,
                  const ffnet::EndpointPtr_t& pEP,
                  const int32_t sae_index,
                  TimePoint& startTime,
-                 int32_t defaultSynchronicStep
+                 int32_t defaultSynchronicStep,
+                 bool resourceControl
                 )
 {
     m_opTrain_x = FMatrix_ptr(new FMatrix(train_x));// Copy and store train_x
     m_sOpts = opts;
     /* initialize step count */
     m_iDefaultStepValue = defaultSynchronicStep;
+    m_bResourceControl = resourceControl;
     m_iAccumulatedPullSteps = 0;
     m_iAccumulatedPushSteps = 0;
     /* end initialize step count */
@@ -200,10 +202,23 @@ void FBNN::train_after_pull(const int32_t sae_index,
     nnbp();
     nnapplygrads();
     LOG_TRACE(fbnn) << "End batch: " << m_ivBatch;
-    if(m_iPushStepNum == m_iCurrentPushSynchronicStep && m_iDefaultStepValue < 0)//if not randomly, push right now
+    if(m_iPushStepNum == m_iCurrentPushSynchronicStep && /*m_iDefaultStepValue < 0 &&*/ 
+        !m_bResourceControl)//if not randomly, push right now
     {
         setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly
 //         m_iPushStepNum = 0;
+    }
+    else if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
+    {
+        bool bNeedToWait = false;
+        if(m_bResourceControl)
+        {
+            //if return busy bNeedToWait = true
+        }
+        if(bNeedToWait)
+        {
+            setCurrentPushSynchronicStep(m_iDefaultStepValue);//wait random steps
+        }
     }
     if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
     {

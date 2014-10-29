@@ -86,7 +86,12 @@ public:
             if(stepControl > maxSynchronicStep)
                 stepControl = maxSynchronicStep;
             std::cout << "Accepted step control = " << stepControl << std::endl;
-            m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime,stepControl-1);
+            bool bResourceControl = false;
+            if(stepControl == 0)//random control
+            {
+                bResourceControl = getResourceControlFromNervureConfigure(m_p_sae_nc);
+            }
+            m_p_sae->SAETrain(*train_x,opts,m_oNNFF,m_oDLMaster,m_oStartTime,stepControl-1,bResourceControl);
             /* end para version */
         }
         else

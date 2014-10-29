@@ -27,7 +27,8 @@ public:
                   ffnet::NetNervureFromFile& ref_NNFF,
                   const ffnet::EndpointPtr_t& pEP,
                   TimePoint& startTime,
-                  int32_t defaultSynchronicStep = -1
+                  int32_t defaultSynchronicStep = -1,
+                  bool resourceControl = false
                  );
 
     bool train_after_end_AE(ffnet::NetNervureFromFile& ref_NNFF,
@@ -50,7 +51,7 @@ protected:
     FMatrix_ptr m_pTrain_x;
     Opts m_sOpts;
     int32_t m_iDefaultSynchronicStep;
-
+    bool m_bResourceControl;
 
 };//end class SAE
 

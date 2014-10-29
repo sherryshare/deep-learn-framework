@@ -46,6 +46,10 @@ inline const int32_t getStepControlFromNervureConfigure(const NervureConfigurePt
     return pnc->get<int32_t>("step.step-control");    
 }
 
+inline const bool getResourceControlFromNervureConfigure(const NervureConfigurePtr& pnc) {
+    return pnc->get<bool>("control.resource-control");    
+}
+
 void getArchFromNervureConfigure(const NervureConfigurePtr& pnc,
                                  const std::string& structure_name,
                                  Arch_t & arch);

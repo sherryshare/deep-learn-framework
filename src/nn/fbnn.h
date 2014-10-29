@@ -36,8 +36,8 @@ public:
          const double learningRate = 2,
          const double zeroMaskedFraction = 0.0,
          const int32_t maxSynchronicStep = 20,
-         const bool testing = false,         
-         const std::string& outputStr = "sigm"         
+         const bool testing = false,
+         const std::string& outputStr = "sigm"
         );
     //FBNN(const FBNN& p) = delete;
     //FBNN& operator =(const FBNN& p) = delete;
@@ -95,7 +95,8 @@ public:
                const ffnet::EndpointPtr_t& pEP,
                const int32_t sae_index,
                TimePoint& startTime,
-               int32_t defaultSynchronicStep
+               int32_t defaultSynchronicStep,
+               bool resourceControl = false
               );
 
     void train_after_pull(const int32_t sae_index,
@@ -118,9 +119,9 @@ public:
     void train(const FMatrix& train_x,
                const FMatrix& train_y ,
                const Opts& opts);
-    
+
     void AEtest(const FMatrix& train_x,
-               const Opts& opts);
+                const Opts& opts);
     double nnff(const FMatrix& x, const FMatrix& y);
     void nnbp(void);
     void nnapplygrads(void);
@@ -133,7 +134,7 @@ public:
     double nntest(const FMatrix& x, const FMatrix& y);
     void nnpredict(const FMatrix& x, const FMatrix& y, FColumn& labels);
 
-    void setCurrentPushSynchronicStep(int32_t step = -1); /*{//set before push      
+    void setCurrentPushSynchronicStep(int32_t step = -1); /*{//set before push
         if(step == -1)
             m_iCurrentPushSynchronicStep = ::rand() % (m_iMaxSynchronicStep+1);
         else
@@ -211,6 +212,8 @@ protected:
     int32_t m_iAccumulatedPullSteps;//Must be less than m_iMaxSynchronicStep, m_iAccumulatedSteps += m_iCurrentSynchronicStep;
 //     bool m_bHasPushed;//Pull operation could only happen when m_bHasPushed == true;
     int32_t m_iDefaultStepValue;//Used to control step by dl_worker
+
+    bool m_bResourceControl;
 
 };//end class FBNN
 //   typedef std::shared_ptr<FBNN> FBNN_ptr;

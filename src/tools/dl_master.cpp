@@ -217,14 +217,29 @@ protected:
 }//end namespace ff
 
 using namespace ff;
+
+bool bNetNervureIsStopped = false;
+
 void  press_and_stop(ffnet::NetNervureFromFile& nnff)
 {
 
     std::cout<<"Press Q to quit..."<<std::endl;
     while(getc(stdin)!='Q');
+    bNetNervureIsStopped = true;
     nnff.stop();
     std::cout<<"Stopping, please wait..."<<std::endl;
 }
+
+void  trace_queue_length(ffnet::NetNervureFromFile& nnff)
+{
+    while(!bNetNervureIsStopped)
+    {
+        size_t s = nnff.getTaskQueue().size();
+        LOG_TRACE(dl_master) << "Task queue length = " << s;
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));        
+    }    
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -256,8 +271,9 @@ int main(int argc, char* argv[])
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
-
-    nnff.run();
+    boost::thread trace_thrd(boost::bind(trace_queue_length, boost::ref(nnff)));
+    nnff.run();    
     monitor_thrd.join();
+    trace_thrd.join();
     return 0;
 }
