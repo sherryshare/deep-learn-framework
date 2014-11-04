@@ -6,7 +6,6 @@
 #include "common/common.h"
 #include "common/types.h"
 #include <dtype/type.h>
-#include <../../parameter_server/src/util/integral_types.h>
 
 namespace ff {
 enum MsgType {
