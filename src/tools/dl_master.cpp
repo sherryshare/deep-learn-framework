@@ -195,6 +195,22 @@ public:
             }*/
         }
     }
+    
+    void onRecvPushResourceReq(boost::shared_ptr<PushResourceReq> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        LOG_TRACE(dl_master) << "Receive push resource req from " << pEP->address().to_string() << ":" << pEP->port();
+        boost::shared_ptr<PushResourceAck> ackMsg(new PushResourceAck(pMsg->sae_index(),false));// default unavailable
+        ackMsg->resource_available() = true;//Annotate if want to send unavailable        
+        m_oNNFF.send(ackMsg,pEP);
+    }
+    
+    void onRecvPullResourceReq(boost::shared_ptr<PullResourceReq> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        LOG_TRACE(dl_master) << "Receive pull resource req from " << pEP->address().to_string() << ":" << pEP->port();
+        boost::shared_ptr<PullResourceAck> ackMsg(new PullResourceAck(pMsg->sae_index(),false));// default unavailable
+        ackMsg->resource_available() = true;//Annotate if want to send unavailable        
+        m_oNNFF.send(ackMsg,pEP);
+    }
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
@@ -268,6 +284,10 @@ int main(int argc, char* argv[])
     nnff.addNeedToRecvPkg<PullParaReq>(boost::bind(&DLMaster::onRecvPullReq, &master, _1, _2));
     nnff.addNeedToRecvPkg<PushParaReq>(boost::bind(&DLMaster::onRecvPushReq, &master, _1, _2));
     nnff.addNeedToRecvPkg<NodeTrainEnd>(boost::bind(&DLMaster::onRecvEndTrain, &master, _1, _2));
+    //add serial scheduler
+    nnff.addNeedToRecvPkg<PushResourceReq>(boost::bind(&DLMaster::onRecvPushResourceReq, &master, _1, _2));
+    nnff.addNeedToRecvPkg<PullResourceReq>(boost::bind(&DLMaster::onRecvPullResourceReq, &master, _1, _2));
+    
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));

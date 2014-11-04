@@ -110,6 +110,28 @@ public:
                           TimePoint& startTime
                          );
 
+    void push_parameters(const int32_t sae_index,
+                         ffnet::NetNervureFromFile& ref_NNFF,
+                         const ffnet::EndpointPtr_t& pEP,
+                         TimePoint& startTime
+                        );
+    void pull_parameters(const int32_t sae_index,
+                         ffnet::NetNervureFromFile& ref_NNFF,
+                         const ffnet::EndpointPtr_t& pEP,
+                         TimePoint& startTime
+                        );
+    void train_after_push_resource_req(const int32_t sae_index,
+                                  bool bResourceAvailable,
+                                  ffnet::NetNervureFromFile& ref_NNFF,
+                                  const ffnet::EndpointPtr_t& pEP,
+                                  TimePoint& startTime
+                                 );
+    void train_after_pull_resource_req(const int32_t sae_index,
+                                    bool bResourceAvailable,
+                                    ffnet::NetNervureFromFile& ref_NNFF,
+                                    const ffnet::EndpointPtr_t& pEP,
+                                    TimePoint& startTime);
+
     void train(const FMatrix& train_x,
                const FMatrix& train_y,
                const Opts& opts,

@@ -148,6 +148,19 @@ public:
             recordDurationTime(m_iPushDurations,m_str_pushtimefile);
         }
     }
+    
+    void onRecvPushResourceAck(boost::shared_ptr<PushResourceAck> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        LOG_TRACE(dl_worker) << "Receive push resource ack from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_push_resource_req(pMsg->sae_index(),pMsg->resource_available(),m_oNNFF,m_oDLMaster,m_oStartTime);                    
+    }
+    void onRecvPullResourceAck(boost::shared_ptr<PullResourceAck> pMsg, ffnet::EndpointPtr_t pEP)
+    {
+        LOG_TRACE(dl_worker) << "Receive pull resource ack from " << pEP->address().to_string() << ":" << pEP->port() << 
+                            ", index = " << pMsg->sae_index();
+        (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->train_after_pull_resource_req(pMsg->sae_index(),pMsg->resource_available(),m_oNNFF,m_oDLMaster,m_oStartTime);
+    }
 
 protected:
     typedef boost::shared_ptr<ffnet::NervureConfigure> NervureConfigurePtr;
@@ -172,13 +185,6 @@ protected:
 }//end namespace ff
 
 using namespace ff;
-// void  press_and_stop(ffnet::NetNervureFromFile& nnff)
-// {
-//     std::cout<<"Press any key to quit..."<<std::endl;
-//     getc(stdin);
-//     nnff.stop();
-//     std::cout<<"Stopping, please wait..."<<std::endl;
-// }
 
 int main(int argc, char* argv[])
 {
@@ -228,7 +234,9 @@ int main(int argc, char* argv[])
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLWorker::onConnSucc, &worker, _1));
     nnff.addNeedToRecvPkg<PullParaAck>(boost::bind(&DLWorker::onRecvPullAck, &worker, _1, _2));
     nnff.addNeedToRecvPkg<PushParaAck>(boost::bind(&DLWorker::onRecvPushAck, &worker, _1, _2));
-
+    nnff.addNeedToRecvPkg<PushResourceAck>(boost::bind(&DLWorker::onRecvPushResourceAck, &worker, _1, _2));
+    nnff.addNeedToRecvPkg<PullResourceAck>(boost::bind(&DLWorker::onRecvPullResourceAck, &worker, _1, _2));
+    
 //     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
     nnff.run();
 //     monitor_thrd.join();

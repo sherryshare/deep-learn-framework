@@ -155,7 +155,8 @@ void FBNN::train(const FMatrix& train_x,
     LOG_TRACE(fbnn) << "Start batch: " << m_ivBatch;
     std::cout << "start batch: " << m_ivBatch << std::endl;
     setCurrentPullSynchronicStep(0);//Need to pull immediately
-    setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately when default = -1
+//     setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately when default = -1
+    setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly when default = -1
     if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
     {
         std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
@@ -171,7 +172,8 @@ void FBNN::train(const FMatrix& train_x,
         /* reset step count */
         m_iAccumulatedPullSteps = 0;
 //         m_iPullStepNum = 0;
-        setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
+//         setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
+        setCurrentPullSynchronicStep(m_iDefaultStepValue);//Attempt to pull randomly when -1
     }
     else
     {
@@ -202,43 +204,18 @@ void FBNN::train_after_pull(const int32_t sae_index,
     nnbp();
     nnapplygrads();
     LOG_TRACE(fbnn) << "End batch: " << m_ivBatch;
-    if(m_iPushStepNum == m_iCurrentPushSynchronicStep && /*m_iDefaultStepValue < 0 &&*/ 
-        !m_bResourceControl)//if not randomly, push right now
+    if(m_iPushStepNum == m_iCurrentPushSynchronicStep)//if not resource control, push right now
     {
-        setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly
-//         m_iPushStepNum = 0;
-    }
-    else if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
-    {
-        bool bNeedToWait = false;
-        if(m_bResourceControl)
+        if(!m_bResourceControl)//push right now
         {
-            //if return busy bNeedToWait = true
+            push_parameters(sae_index,ref_NNFF,pEP,startTime);
         }
-        if(bNeedToWait)
+        else//start resource request
         {
-            setCurrentPushSynchronicStep(m_iDefaultStepValue);//wait random steps
+            boost::shared_ptr<PushResourceReq> pushResourceReq(new PushResourceReq(sae_index));
+            LOG_TRACE(fbnn) << "Send push resource request to " << pEP->address().to_string();
+            ref_NNFF.send(pushResourceReq,pEP);
         }
-    }
-    if(m_iPushStepNum == m_iCurrentPushSynchronicStep)
-    {
-        LOG_TRACE(fbnn) << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps.";
-        std::cout << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps."<< std::endl;
-        //push under network conditions
-        std::cout << "Need to push weights!" << std::endl;
-        //set push package
-        boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
-        copy(get_m_oVWs().begin(),get_m_oVWs().end(),std::back_inserter(pushReqMsg->dWs()));
-        pushReqMsg->sae_index() = sae_index;
-        startTime = boost::chrono::system_clock::now();//push time clock
-        LOG_TRACE(fbnn) << "Send push request to " << pEP->address().to_string() << ":" << pEP->port() <<
-                        ", index = " << sae_index;
-        ref_NNFF.send(pushReqMsg,pEP);
-        ++m_ivBatch;
-        /* reset step count */
-        m_iAccumulatedPushSteps = 0;
-//         m_iPushStepNum = 0;
-        setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately
     }
     else
     {
@@ -246,6 +223,62 @@ void FBNN::train_after_pull(const int32_t sae_index,
         ++m_iPushStepNum;
         train_after_push(sae_index,ref_NNFF,pEP,startTime);
     }
+}
+
+void FBNN::train_after_push_resource_req(const int32_t sae_index,
+        bool bResourceAvailable,
+        ffnet::NetNervureFromFile& ref_NNFF,
+        const ffnet::EndpointPtr_t& pEP,
+        TimePoint& startTime)
+{
+    LOG_TRACE(fbnn) << "Receive push resource ack from " << pEP->address().to_string();
+    LOG_TRACE(fbnn) << "Resource available = " << bResourceAvailable;
+    if(bResourceAvailable)
+    {
+        push_parameters(sae_index,ref_NNFF,pEP,startTime);
+    }
+    else
+    {
+        setCurrentPushSynchronicStep(m_iDefaultStepValue);//If fail, wait random steps
+//         LOG_TRACE(fbnn) << "Need to wait for " << m_iPushStepNum+1 << " steps";
+        if(m_iPushStepNum == m_iCurrentPushSynchronicStep)//need to push right now
+        {
+            LOG_TRACE(fbnn) << "Push right now!";
+            push_parameters(sae_index,ref_NNFF,pEP,startTime);
+        }
+        else
+        {
+            ++m_ivBatch;
+            ++m_iPushStepNum;
+            train_after_push(sae_index,ref_NNFF,pEP,startTime);
+        }
+    }
+}
+
+void FBNN::push_parameters(const int32_t sae_index,
+                           ffnet::NetNervureFromFile& ref_NNFF,
+                           const ffnet::EndpointPtr_t& pEP,
+                           TimePoint& startTime
+                          )
+{
+    LOG_TRACE(fbnn) << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps.";
+    std::cout << "Train without push for " << m_iAccumulatedPushSteps + 1 << " steps."<< std::endl;
+    //push under network conditions
+    std::cout << "Need to push weights!" << std::endl;
+    //set push package
+    boost::shared_ptr<PushParaReq> pushReqMsg(new PushParaReq());
+    copy(get_m_oVWs().begin(),get_m_oVWs().end(),std::back_inserter(pushReqMsg->dWs()));
+    pushReqMsg->sae_index() = sae_index;
+    startTime = boost::chrono::system_clock::now();//push time clock
+    LOG_TRACE(fbnn) << "Send push request to " << pEP->address().to_string() << ":" << pEP->port() <<
+                    ", index = " << sae_index;
+    ref_NNFF.send(pushReqMsg,pEP);
+    ++m_ivBatch;
+    /* reset step count */
+    m_iAccumulatedPushSteps = 0;
+//         m_iPushStepNum = 0;
+//         setCurrentPushSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to push immediately
+    setCurrentPushSynchronicStep(m_iDefaultStepValue);//Attempt to push randomly when -1
 }
 
 void FBNN::setCurrentPushSynchronicStep(int32_t step) {//set before push
@@ -260,6 +293,7 @@ void FBNN::setCurrentPushSynchronicStep(int32_t step) {//set before push
         m_iCurrentPushSynchronicStep = m_iBatchNum - m_ivBatch - 1;
     m_iAccumulatedPushSteps += m_iCurrentPushSynchronicStep;
     m_iPushStepNum = 0;//reset
+    LOG_TRACE(fbnn) << "Need to wait for " << m_iCurrentPushSynchronicStep << " push steps";
 }
 
 void FBNN::setCurrentPullSynchronicStep(int32_t step) {//set before pull
@@ -270,10 +304,64 @@ void FBNN::setCurrentPullSynchronicStep(int32_t step) {//set before pull
     int32_t deltaSteps = m_iMaxSynchronicStep - m_iAccumulatedPullSteps;
     if(m_iCurrentPullSynchronicStep > deltaSteps)
         m_iCurrentPullSynchronicStep = deltaSteps;
-    if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPullSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
-        m_iCurrentPullSynchronicStep = m_iBatchNum - m_ivBatch - 1;
+//     if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPullSynchronicStep >= m_iBatchNum - m_ivBatch)// last epoch
+//         m_iCurrentPullSynchronicStep = m_iBatchNum - m_ivBatch - 1;
+    //Make sure m_iMaxSynchronicStep < m_iBatchNum
+    if(m_ivEpoch == m_sOpts.numpochs - 1 && m_iCurrentPullSynchronicStep >= m_iBatchNum - m_ivBatch - 1)// last epoch
+        m_iCurrentPullSynchronicStep = (m_iBatchNum-m_ivBatch-2>0)?(m_iBatchNum-m_ivBatch-2):0;//Modify for deleting pull-right-now setting       
     m_iAccumulatedPullSteps += m_iCurrentPullSynchronicStep;
     m_iPullStepNum = 0;//reset
+    LOG_TRACE(fbnn) << "Need to wait for " << m_iCurrentPullSynchronicStep << " pull steps";
+}
+
+void FBNN::pull_parameters(const int32_t sae_index,
+                           ffnet::NetNervureFromFile& ref_NNFF,
+                           const ffnet::EndpointPtr_t& pEP,
+                           TimePoint& startTime)
+{
+    LOG_TRACE(fbnn) << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps.";
+    std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
+    //pull under network conditions
+    std::cout << "Need to pull weights!" << std::endl;
+    boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
+    pullReqMsg->sae_index() = sae_index;
+    startTime = boost::chrono::system_clock::now();//pull time clock
+    LOG_TRACE(fbnn) << "Send pull request to " << pEP->address().to_string() << ":" << pEP->port() <<
+                    ", index = " << sae_index;
+    ref_NNFF.send(pullReqMsg,pEP);
+    /* reset step count */
+    m_iAccumulatedPullSteps = 0;
+//             setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
+    setCurrentPullSynchronicStep(m_iDefaultStepValue);//Attempt to pull randomly
+}
+
+void FBNN::train_after_pull_resource_req(const int32_t sae_index,
+        bool bResourceAvailable,
+        ffnet::NetNervureFromFile& ref_NNFF,
+        const ffnet::EndpointPtr_t& pEP,
+        TimePoint& startTime)
+{
+    LOG_TRACE(fbnn) << "Receive pull resource ack from " << pEP->address().to_string();
+    LOG_TRACE(fbnn) << "Resource available = " << bResourceAvailable;
+    if(bResourceAvailable)
+    {
+        pull_parameters(sae_index,ref_NNFF,pEP,startTime);
+    }
+    else
+    {
+        setCurrentPullSynchronicStep(m_iDefaultStepValue);//If fail, wait random steps
+//         LOG_TRACE(fbnn) << "Need to wait for " << m_iPullStepNum+1 << " steps";
+        if(m_iPullStepNum == m_iCurrentPullSynchronicStep)//need to pull right now
+        {
+            LOG_TRACE(fbnn) << "Pull right now!";
+            pull_parameters(sae_index,ref_NNFF,pEP,startTime);
+        }
+        else
+        {
+            ++m_iPullStepNum;
+            train_after_pull(sae_index,ref_NNFF,pEP,startTime);
+        }
+    }
 }
 
 bool FBNN::train_after_push(const int32_t sae_index,
@@ -286,32 +374,23 @@ bool FBNN::train_after_push(const int32_t sae_index,
     if(m_ivBatch < m_iBatchNum && m_ivEpoch < m_sOpts.numpochs) {
         LOG_TRACE(fbnn) << "Start batch: " << m_ivBatch;
         std::cout << "start batch: " << m_ivBatch << std::endl;
-        if(m_iPullStepNum == m_iCurrentPullSynchronicStep && m_iDefaultStepValue < 0)
-        {
-            setCurrentPullSynchronicStep(m_iDefaultStepValue);//Attempt to pull randomly
-//             m_iPullStepNum = 0;
-        }
         if(m_iPullStepNum == m_iCurrentPullSynchronicStep)
         {
-            LOG_TRACE(fbnn) << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps.";
-            std::cout << "Train without pull for " << m_iAccumulatedPullSteps + 1 << " steps."<< std::endl;
-            //pull under network conditions
-            std::cout << "Need to pull weights!" << std::endl;
-            boost::shared_ptr<PullParaReq> pullReqMsg(new PullParaReq());
-            pullReqMsg->sae_index() = sae_index;
-            startTime = boost::chrono::system_clock::now();//pull time clock
-            LOG_TRACE(fbnn) << "Send pull request to " << pEP->address().to_string() << ":" << pEP->port() <<
-                            ", index = " << sae_index;
-            ref_NNFF.send(pullReqMsg,pEP);
-            /* reset step count */
-            m_iAccumulatedPullSteps = 0;
-//             m_iPullStepNum = 0;
-            setCurrentPullSynchronicStep((m_iDefaultStepValue<0)?0:m_iDefaultStepValue);//Attempt to pull immediately
+            if(!m_bResourceControl)//pull right now
+            {
+                pull_parameters(sae_index,ref_NNFF,pEP,startTime);
+            }
+            else//start resource request
+            {
+                boost::shared_ptr<PullResourceReq> pullResourceReq(new PullResourceReq(sae_index));
+                LOG_TRACE(fbnn) << "Send pull resource request to " << pEP->address().to_string();
+                ref_NNFF.send(pullResourceReq,pEP);
+            }
         }
         else
         {
             ++m_iPullStepNum;
-            train_after_pull(sae_index,ref_NNFF,pEP,startTime);//add to avoid network failure-07/28
+            train_after_pull(sae_index,ref_NNFF,pEP,startTime);
         }
     }
     else if(m_ivEpoch < m_sOpts.numpochs) {

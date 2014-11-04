@@ -6,6 +6,7 @@
 #include "common/common.h"
 #include "common/types.h"
 #include <dtype/type.h>
+#include <../../parameter_server/src/util/integral_types.h>
 
 namespace ff {
 enum MsgType {
@@ -21,6 +22,10 @@ enum MsgType {
     msg_push_para_req,
     msg_push_para_ack,
     msg_node_train_end,
+    msg_pull_resource_req,
+    msg_pull_resource_ack,
+    msg_push_resource_req,
+    msg_push_resource_ack,
 };
 
 class HeartBeatMsg : public ffnet::Package
@@ -214,10 +219,10 @@ public:
             for(int32_t i = 0; i < len; ++i)
             {
                 serialize_FMatrix(ar,m_oVWs[i]);
-            }       */     
+            }       */
         }
         if(ar.is_deserializer())
-        {     
+        {
             ar.archive(m_u_sae_index);
             int32_t len;
             ar.archive(len);
@@ -229,7 +234,7 @@ public:
             for(int32_t i = 0; i < len; ++i)
             {
                 m_oVWs.push_back(FMatrix_ptr(new FMatrix(deserialize_FMatrix(ar))));
-            }      */      
+            }      */
         }
     }
 
@@ -339,18 +344,136 @@ public:
     virtual void archive(ffnet::Archive& ar) {
         ar.archive(m_b_start_NNTrain);
     }
-    
+
     bool& startNNTrain() {
         return m_b_start_NNTrain;
     }
-    
+
     const bool& startNNTrain() const {
         return m_b_start_NNTrain;
     }
-    
+
 protected:
     bool m_b_start_NNTrain;
 };
+
+class PullResourceReq : public ffnet::Package
+{
+public:
+    PullResourceReq()
+        :Package(msg_pull_resource_req)
+    {}
+    PullResourceReq(int32_t saeIndex)
+        :Package(msg_pull_resource_req)
+        ,m_u_sae_index(saeIndex)
+    {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_u_sae_index);
+    }
+
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
+protected:
+    int32_t m_u_sae_index;
+};
+
+class PullResourceAck : public ffnet::Package
+{
+public:
+    PullResourceAck()
+        :Package(msg_pull_resource_ack)
+    {}
+    PullResourceAck(int32_t saeIndex, bool bIsAvailable)
+        :Package(msg_pull_resource_ack)
+        ,m_u_sae_index(saeIndex)
+        , m_b_resource_available(bIsAvailable)
+
+    {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_u_sae_index);
+        ar.archive(m_b_resource_available);
+    }
+
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
+
+    bool & resource_available() {
+        return m_b_resource_available;
+    }
+    const bool & resource_available() const {
+        return m_b_resource_available;
+    }
+protected:
+    int32_t m_u_sae_index;
+    bool m_b_resource_available;
+};
+
+class PushResourceReq : public ffnet::Package
+{
+public:
+    PushResourceReq()
+        :Package(msg_push_resource_req)
+    {}
+    PushResourceReq(int32_t saeIndex)
+        :Package(msg_push_resource_req)
+        ,m_u_sae_index(saeIndex)
+    {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_u_sae_index);
+    }
+
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
+protected:
+    int32_t m_u_sae_index;
+};
+
+class PushResourceAck : public ffnet::Package
+{
+public:
+    PushResourceAck()
+        :Package(msg_push_resource_ack)
+    {}
+    PushResourceAck(int32_t saeIndex, bool bIsAvailable)
+        :Package(msg_push_resource_ack)
+        ,m_u_sae_index(saeIndex)
+        , m_b_resource_available(bIsAvailable)
+    {}
+    virtual void archive(ffnet::Archive& ar) {
+        ar.archive(m_u_sae_index);
+        ar.archive(m_b_resource_available);
+    }
+
+    int32_t& sae_index() {
+        return m_u_sae_index;
+    }
+    const int32_t& sae_index() const {
+        return m_u_sae_index;
+    }
+
+    bool & resource_available() {
+        return m_b_resource_available;
+    }
+    const bool & resource_available() const {
+        return m_b_resource_available;
+    }
+protected:
+    int32_t m_u_sae_index;
+    bool m_b_resource_available;
+};
+
 
 }//end namespace ff
 #endif
