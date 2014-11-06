@@ -20,7 +20,8 @@ public:
           m_str_fbnn_ConfigFile(fbnn_config_file),
           m_iEndPretrain(0),
           m_str_pushhandlefile("push_handle_time.txt"),
-          m_str_pullhandlefile("pull_handle_time.txt")
+          m_str_pullhandlefile("pull_handle_time.txt"),
+          m_b_is_occupied(false)
     {}
 
     void onConnSucc(ffnet::TCPConnectionBase*pConn)
@@ -72,16 +73,16 @@ public:
         m_p_sae_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/SdAE_train.ini"));
         divide_into_files(m_oSlaves.size(),getInputFileNameFromNervureConfigure(m_p_sae_nc),".");
         m_p_sae = SAE_create(m_p_sae_nc);
- /*       
-        //test SAE default error rate
-        LOG_TRACE(dl_master) << "Test SAE default error rate.";
-        test_SAE(m_p_sae,m_p_sae_nc);
-        //train NN with random init value
-        LOG_TRACE(dl_master) << "Test FFNN default error rate.";
-        m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
-        train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
-        LOG_TRACE(dl_master) << "End test FFNN default error rate.";
-        */
+        /*
+               //test SAE default error rate
+               LOG_TRACE(dl_master) << "Test SAE default error rate.";
+               test_SAE(m_p_sae,m_p_sae_nc);
+               //train NN with random init value
+               LOG_TRACE(dl_master) << "Test FFNN default error rate.";
+               m_p_fbnn_nc = NervureConfigurePtr(new ffnet::NervureConfigure("../confs/apps/FFNN_train.ini"));
+               train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
+               LOG_TRACE(dl_master) << "End test FFNN default error rate.";
+               */
     }
 
     void onRecvSendFileDirAck(boost::shared_ptr<FileSendDirAck> pMsg, ffnet::EndpointPtr_t pEP)
@@ -118,6 +119,7 @@ public:
 
     void onRecvPullReq(boost::shared_ptr<PullParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_b_is_occupied = true;//directly used in serial version
         m_oStartTime = boost::chrono::system_clock::now();
         LOG_TRACE(dl_master) << "Receive pull request from " << pEP->address().to_string() << ":" << pEP->port() <<
                              ", index = " << pMsg->sae_index();
@@ -129,17 +131,19 @@ public:
         const std::vector<FMatrix_ptr>& org_Ws = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oWs();
 //         const std::vector<FMatrix_ptr>& org_VWs = (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->get_m_oVWs();
         copy(org_Ws.begin(),org_Ws.end(),std::back_inserter(ackMsg->Ws()));
-//         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));        
+//         copy(org_VWs.begin(),org_VWs.end(),std::back_inserter(ackMsg->VWs()));
         m_oNNFF.send(ackMsg,pEP);
         LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
                              ", index = " << pMsg->sae_index();
         m_oEndTime = boost::chrono::system_clock::now();
         int duration_time = boost::chrono::duration_cast<boost::chrono::milliseconds>(m_oEndTime-m_oStartTime).count();
         m_iPullHandleDurations.push_back(std::make_pair<int,int>(pMsg->sae_index(),duration_time));
+        m_b_is_occupied = false;//directly used in serial version
     }
 
     void onRecvPushReq(boost::shared_ptr<PushParaReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
+        m_b_is_occupied = true;//directly used in serial version
         m_oStartTime = boost::chrono::system_clock::now();
         LOG_TRACE(dl_master) << "Receive push request from " << pEP->address().to_string() << ":" << pEP->port() <<
                              ", index = " << pMsg->sae_index();
@@ -150,7 +154,7 @@ public:
         //nnapplygrads
         (m_p_sae->get_m_oAEs()[pMsg->sae_index()])->nnapplygrads();//read odWs, write oWs and oVWs
         boost::shared_ptr<PushParaAck> ackMsg(new PushParaAck());
-        ackMsg->sae_index() = pMsg->sae_index();        
+        ackMsg->sae_index() = pMsg->sae_index();
         m_oNNFF.send(ackMsg,pEP);
         LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
                              ", index = " << pMsg->sae_index();
@@ -170,6 +174,7 @@ public:
             train_NN(SAE_ptr((SAE*)NULL),m_p_fbnn_nc);//train a final fbnn after pretraining
             LOG_TRACE(dl_master) << "End test FFNN error rate after push.";
         }
+        m_b_is_occupied = false;//directly used in serial version
     }
 
     void onRecvEndTrain(boost::shared_ptr<NodeTrainEnd> pMsg, ffnet::EndpointPtr_t pEP)
@@ -195,20 +200,26 @@ public:
             }*/
         }
     }
-    
+
     void onRecvPushResourceReq(boost::shared_ptr<PushResourceReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         LOG_TRACE(dl_master) << "Receive push resource req from " << pEP->address().to_string() << ":" << pEP->port();
         boost::shared_ptr<PushResourceAck> ackMsg(new PushResourceAck(pMsg->sae_index(),false));// default unavailable
-        ackMsg->resource_available() = true;//Annotate if want to send unavailable        
+        if(!m_b_is_occupied) {
+            ackMsg->resource_available() = true;//Annotate if want to send unavailable
+            m_b_is_occupied = true;
+        }
         m_oNNFF.send(ackMsg,pEP);
     }
-    
+
     void onRecvPullResourceReq(boost::shared_ptr<PullResourceReq> pMsg, ffnet::EndpointPtr_t pEP)
     {
         LOG_TRACE(dl_master) << "Receive pull resource req from " << pEP->address().to_string() << ":" << pEP->port();
         boost::shared_ptr<PullResourceAck> ackMsg(new PullResourceAck(pMsg->sae_index(),false));// default unavailable
-        ackMsg->resource_available() = true;//Annotate if want to send unavailable        
+        if(!m_b_is_occupied) {
+            ackMsg->resource_available() = true;//Annotate if want to send unavailable
+            m_b_is_occupied = true;
+        }
         m_oNNFF.send(ackMsg,pEP);
     }
 
@@ -228,6 +239,7 @@ protected:
     TimePoint m_oEndTime;
     std::vector<std::pair<int,int> > m_iPushHandleDurations;
     std::vector<std::pair<int,int> > m_iPullHandleDurations;
+    bool m_b_is_occupied;
 };
 
 }//end namespace ff
@@ -252,8 +264,8 @@ void  trace_queue_length(ffnet::NetNervureFromFile& nnff)
     {
         size_t s = nnff.getTaskQueue().size();
         LOG_TRACE(dl_master) << "Task queue length = " << s;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));        
-    }    
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+    }
 }
 
 
@@ -287,12 +299,12 @@ int main(int argc, char* argv[])
     //add serial scheduler
     nnff.addNeedToRecvPkg<PushResourceReq>(boost::bind(&DLMaster::onRecvPushResourceReq, &master, _1, _2));
     nnff.addNeedToRecvPkg<PullResourceReq>(boost::bind(&DLMaster::onRecvPullResourceReq, &master, _1, _2));
-    
+
     ffnet::event::Event<ffnet::event::tcp_get_connection>::listen(&nnff, boost::bind(&DLMaster::onConnSucc, &master, _1));
 
     boost::thread monitor_thrd(boost::bind(press_and_stop, boost::ref(nnff)));
     boost::thread trace_thrd(boost::bind(trace_queue_length, boost::ref(nnff)));
-    nnff.run();    
+    nnff.run();
     monitor_thrd.join();
     trace_thrd.join();
     return 0;
