@@ -210,6 +210,8 @@ public:
             m_b_is_occupied = true;
         }
         m_oNNFF.send(ackMsg,pEP);
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index() << ", resource_available = " << ackMsg->resource_available();
     }
 
     void onRecvPullResourceReq(boost::shared_ptr<PullResourceReq> pMsg, ffnet::EndpointPtr_t pEP)
@@ -221,6 +223,8 @@ public:
             m_b_is_occupied = true;
         }
         m_oNNFF.send(ackMsg,pEP);
+        LOG_TRACE(dl_master) << "Send ack message to " << pEP->address().to_string() << ":" << pEP->port() <<
+                             ", index = " << pMsg->sae_index() << ", resource_available = " << ackMsg->resource_available();
     }
 
 protected:
