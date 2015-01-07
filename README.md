@@ -1,4 +1,4 @@
 deep-learn-framework
 ====================
 
-A distributed framework for deep learning.
+A parameter-server framework for deep learning.
